@@ -490,8 +490,9 @@ function sanitizeOra(el, cardId) {
 }
 function blurOra(el, cardId) {
   let v = el.value;
-  if (/^\d{1,2},$/.test(v)) v = v + '00';   // "21," → "21,00" / "8," → "8,00"
-  if (/^\d,\d{2}$/.test(v)) v = '0' + v;    // "8,00" → "08,00" / "2,30" → "02,30"
+  if (/^\d{1,2}$/.test(v))  v = v.padStart(2, '0') + ',00'; // "21" → "21,00" / "8" → "08,00"
+  if (/^\d{1,2},$/.test(v)) v = v.slice(0,-1).padStart(2,'0') + ',00'; // "21," → "21,00"
+  if (/^\d,\d{2}$/.test(v)) v = '0' + v;                    // "2,30" → "02,30"
   el.value = v;
   const card = document.getElementById(cardId);
   card.classList.toggle('err', !ORA_RE.test(el.value));
