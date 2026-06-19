@@ -122,7 +122,7 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:220px;overflow:hidden;text-ove
 
     <!-- Filters -->
     <div class="filters-card">
-      <div class="filter-group">
+      <div class="filter-group" id="fg-asl">
         <label>ASL</label>
         <select id="f-asl">
           <option value="">Tutte le ASL</option>
@@ -344,17 +344,26 @@ const PAGE_SIZE = 100;
 let currentPage = 0;
 let totalCount  = 0;
 let activeScheda = 'etilometro';
+let userRole = 'admin';
+let userAsl  = null;
 
 /* ============================================================
    AUTH
 ============================================================ */
 db.auth.onAuthStateChange((_e, session) => {
   if (session) {
-    document.getElementById('user-email').textContent = session.user.email;
+    const meta = session.user.app_metadata || {};
+    userRole = meta.role === 'asl' ? 'asl' : 'admin';
+    userAsl  = meta.asl || null;
+
+    const label = userRole === 'asl' ? `${session.user.email} — ${userAsl}` : session.user.email;
+    document.getElementById('user-email').textContent = label;
+    document.getElementById('fg-asl').style.display = userRole === 'asl' ? 'none' : '';
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'flex';
     loadData();
   } else {
+    userRole = 'admin'; userAsl = null;
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('admin-panel').style.display = 'none';
   }
@@ -402,7 +411,7 @@ function switchScheda(key) {
 ============================================================ */
 function getFilters() {
   return {
-    asl:  document.getElementById('f-asl').value,
+    asl:  userRole === 'asl' ? userAsl : document.getElementById('f-asl').value,
     da:   document.getElementById('f-da').value,
     a:    document.getElementById('f-a').value,
     tipo: document.getElementById('f-tipo').value,
@@ -421,7 +430,8 @@ function buildQuery(f, selectStr) {
 
 function applyFilters() { currentPage = 0; loadData(); }
 function resetFilters() {
-  ['f-asl','f-da','f-a','f-tipo'].forEach(id => document.getElementById(id).value = '');
+  ['f-da','f-a','f-tipo'].forEach(id => document.getElementById(id).value = '');
+  if (userRole !== 'asl') document.getElementById('f-asl').value = '';
   currentPage = 0; loadData();
 }
 function prevPage() { if (currentPage > 0) { currentPage--; loadData(); } }
@@ -495,7 +505,8 @@ function renderTable(rows, schema) {
   }
   tbody.innerHTML = rows.map(r =>
     '<tr>' + schema.displayCols.map(c => cellVal(r[c.k], c)).join('') +
-    `<td><button class="btn-del" onclick="deleteRow('${r.id}')">Elimina</button></td></tr>`
+    (userRole === 'asl' ? '<td></td>' : `<td><button class="btn-del" onclick="deleteRow('${r.id}')">Elimina</button></td>`) +
+    '</tr>'
   ).join('');
 }
 
