@@ -289,12 +289,6 @@
     <p class="errmsg">Seleziona un'opzione per continuare</p>
   </div>
 
-  <div class="qcard hidden" id="c-trasporto_prima_altro">
-    <p class="qlabel">Specificare Altro<span class="req">*</span></p>
-    <input type="text" id="trasporto_prima_altro" placeholder="Specifica…" oninput="sync()">
-    <p class="errmsg">Specifica per continuare</p>
-  </div>
-
   <div class="qcard" id="c-valore_atteso_range">
     <p class="qlabel">Che valore ti aspetti dall'etilometro?<span class="req">*</span></p>
     <div class="opts">
@@ -340,12 +334,6 @@
       <label class="opt"><input type="radio" name="trasporto_dopo" value="altro"><span>Altro</span></label>
     </div>
     <p class="errmsg">Seleziona un'opzione per continuare</p>
-  </div>
-
-  <div class="qcard hidden" id="c-trasporto_dopo_altro">
-    <p class="qlabel">Specificare Altro<span class="req">*</span></p>
-    <input type="text" id="trasporto_dopo_altro" placeholder="Specifica…" oninput="sync()">
-    <p class="errmsg">Specifica per continuare</p>
   </div>
 
   <!-- FORK -->
@@ -523,12 +511,6 @@ document.querySelectorAll('input[name=sostanze]').forEach(cb => {
 
 /* ---- Conditional reveal logic ---- */
 function handleConditionals(name) {
-  if (name === 'trasporto_prima') {
-    toggle('c-trasporto_prima_altro', gRad('trasporto_prima') === 'altro');
-  }
-  if (name === 'trasporto_dopo') {
-    toggle('c-trasporto_dopo_altro', gRad('trasporto_dopo') === 'altro');
-  }
   if (name === 'ha_mangiato') {
     toggle('c-ha_mangiato_da_quanto', gRad('ha_mangiato') !== 'no' && gRad('ha_mangiato') !== '');
   }
@@ -580,12 +562,10 @@ const validators = {
   patente: () => !!gRad('patente'),
   patente_ritirata: () => !!gRad('patente_ritirata'),
   trasporto_prima: () => !!gRad('trasporto_prima'),
-  trasporto_prima_altro: () => gRad('trasporto_prima') !== 'altro' || gVal('trasporto_prima_altro').length > 0,
   valore_atteso_range: () => !!gRad('valore_atteso_range'),
   valore_rilevato_preciso: () => /^\d+,\d{2}$/.test(gVal('valore_rilevato_preciso')),
   valore_rilevato_range: () => !!gRad('valore_rilevato_range'),
   trasporto_dopo: () => !!gRad('trasporto_dopo'),
-  trasporto_dopo_altro: () => gRad('trasporto_dopo') !== 'altro' || gVal('trasporto_dopo_altro').length > 0,
   stima_consumo: () => !!gRad('stima_consumo'),
   ha_mangiato: () => !!gRad('ha_mangiato'),
   ha_mangiato_da_quanto: () => gRad('ha_mangiato') === 'no' || !!gRad('ha_mangiato_da_quanto'),
@@ -594,8 +574,8 @@ const validators = {
 };
 
 const BASE_IDS = ['data_caricamento','asl','data_evento','luogo_tipo','luogo_nome','tempo_da_bere',
-  'genere','sesso','eta','patente','patente_ritirata','trasporto_prima','trasporto_prima_altro',
-  'valore_atteso_range','valore_rilevato_preciso','valore_rilevato_range','trasporto_dopo','trasporto_dopo_altro'];
+  'genere','sesso','eta','patente','patente_ritirata','trasporto_prima',
+  'valore_atteso_range','valore_rilevato_preciso','valore_rilevato_range','trasporto_dopo'];
 
 const DEEP_IDS = ['stima_consumo','ha_mangiato','ha_mangiato_da_quanto','sostanze','sostanze_altro'];
 
