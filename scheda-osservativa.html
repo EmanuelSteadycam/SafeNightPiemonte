@@ -146,7 +146,8 @@ input[type=text]:focus,input[type=date]:focus{border-color:#1a1a1a;background:#f
   <div class="qcard" id="c-ora_inizio">
     <p class="qlabel">Ora inizio<span class="req">*</span></p>
     <p class="qhint">Usa la virgola come separatore: esempio <strong>22,30</strong></p>
-    <input type="text" id="ora_inizio" placeholder="22,30" maxlength="10" inputmode="decimal">
+    <input type="text" id="ora_inizio" placeholder="22,30" maxlength="5" inputmode="decimal"
+      oninput="sanitizeOra(this, 'c-ora_inizio')" onblur="blurOra(this, 'c-ora_inizio')">
     <p class="ora-hint">NON usare il punto (.) o i due punti (:)</p>
     <p class="errmsg">Inserisci l'orario nel formato corretto (es. 22,30)</p>
   </div>
@@ -154,7 +155,8 @@ input[type=text]:focus,input[type=date]:focus{border-color:#1a1a1a;background:#f
   <div class="qcard" id="c-ora_fine">
     <p class="qlabel">Ora fine<span class="req">*</span></p>
     <p class="qhint">Usa la virgola come separatore: esempio <strong>02,30</strong>. Per orari dopo la mezzanotte inserire 0 prima: es. <strong>02,30</strong></p>
-    <input type="text" id="ora_fine" placeholder="02,30" maxlength="10" inputmode="decimal">
+    <input type="text" id="ora_fine" placeholder="02,30" maxlength="5" inputmode="decimal"
+      oninput="sanitizeOra(this, 'c-ora_fine')" onblur="blurOra(this, 'c-ora_fine')">
     <p class="ora-hint">NON usare il punto (.) o i due punti (:)</p>
     <p class="errmsg">Inserisci l'orario nel formato corretto (es. 02,30)</p>
   </div>
@@ -478,6 +480,18 @@ document.querySelectorAll('input[type=checkbox]').forEach(i => {
     i.closest('.cb-opt').classList.toggle('sel', i.checked);
   });
 });
+
+/* Ora validation (same approach as etilometro valore) */
+function sanitizeOra(el, cardId) {
+  const v = el.value;
+  const card = document.getElementById(cardId);
+  const valid = /^\d{1,2},\d{2}$/.test(v);
+  card.classList.toggle('err', v.length > 0 && !valid);
+}
+function blurOra(el, cardId) {
+  const card = document.getElementById(cardId);
+  card.classList.toggle('err', !/^\d{1,2},\d{2}$/.test(el.value));
+}
 
 /* Show/hide "altro" sub-fields */
 function toggleSub(id, show) {
