@@ -299,6 +299,13 @@
     <p class="errmsg">Seleziona un'opzione per continuare</p>
   </div>
 
+  <div class="qcard" id="c-valore_rilevato_preciso">
+    <p class="qlabel">Valore preciso rilevato<span class="req">*</span></p>
+    <p class="qhint">Formato es. 0,23</p>
+    <input type="text" id="valore_rilevato_preciso" placeholder="0,00" inputmode="decimal" oninput="sync()">
+    <p class="errmsg">Inserisci il valore per continuare</p>
+  </div>
+
   <div class="qcard" id="c-valore_rilevato_range">
     <p class="qlabel">Valore rilevato all'etilometro<span class="req">*</span></p>
     <div class="opts">
@@ -309,12 +316,6 @@
       <label class="opt"><input type="radio" name="valore_rilevato_range" value=">1.50"><span>&gt; 1,50</span></label>
     </div>
     <p class="errmsg">Seleziona un'opzione per continuare</p>
-  </div>
-
-  <div class="qcard" id="c-valore_rilevato_preciso">
-    <p class="qlabel">Valore preciso rilevato <span style="font-weight:400;color:#888">(facoltativo)</span></p>
-    <p class="qhint">Formato es. 0,23</p>
-    <input type="text" id="valore_rilevato_preciso" placeholder="0,00" inputmode="decimal">
   </div>
 
   <div class="qcard" id="c-trasporto_dopo">
@@ -545,6 +546,7 @@ const validators = {
   patente_ritirata: () => !!gRad('patente_ritirata'),
   trasporto_prima: () => !!gRad('trasporto_prima'),
   valore_atteso_range: () => !!gRad('valore_atteso_range'),
+  valore_rilevato_preciso: () => gVal('valore_rilevato_preciso').length > 0,
   valore_rilevato_range: () => !!gRad('valore_rilevato_range'),
   trasporto_dopo: () => !!gRad('trasporto_dopo'),
   stima_consumo: () => !!gRad('stima_consumo'),
@@ -556,7 +558,7 @@ const validators = {
 
 const BASE_IDS = ['data_caricamento','asl','data_evento','luogo_tipo','luogo_nome','tempo_da_bere',
   'genere','sesso','eta','patente','patente_ritirata','trasporto_prima',
-  'valore_atteso_range','valore_rilevato_range','trasporto_dopo'];
+  'valore_atteso_range','valore_rilevato_preciso','valore_rilevato_range','trasporto_dopo'];
 
 const DEEP_IDS = ['stima_consumo','ha_mangiato','ha_mangiato_da_quanto','sostanze','sostanze_altro'];
 
