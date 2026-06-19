@@ -522,7 +522,10 @@ document.querySelectorAll('input[name=variazioni_orario]').forEach(r => {
 /* Helpers */
 function gVal(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
 function gRad(n) { const r = document.querySelector(`input[name="${n}"]:checked`); return r ? r.value : ''; }
-function gCbs(n) { return [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(c => c.value); }
+function gCbs(n) {
+  const vals = [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(c => c.value);
+  return vals.length ? vals : null;
+}
 
 /* Validation */
 function validate() {
