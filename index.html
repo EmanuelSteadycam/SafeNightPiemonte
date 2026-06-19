@@ -552,14 +552,14 @@ function stepDrink(type, delta) {
 function sanitizeValore(el) {
   const v = el.value;
   const card = document.getElementById('c-valore_rilevato_preciso');
-  const valid = /^\d+,\d{1,2}$/.test(v);
+  const valid = /^\d+,\d{2}$/.test(v);
   card.classList.toggle('err', v.length > 0 && !valid);
   sync();
 }
 
 function blurValore(el) {
   const card = document.getElementById('c-valore_rilevato_preciso');
-  card.classList.toggle('err', !/^\d+,\d{1,2}$/.test(el.value));
+  card.classList.toggle('err', !/^\d+,\d{2}$/.test(el.value));
 }
 
 function gRad(n) { const r = document.querySelector(`input[name="${n}"]:checked`); return r ? r.value : ''; }
@@ -582,7 +582,7 @@ const validators = {
   trasporto_prima: () => !!gRad('trasporto_prima'),
   trasporto_prima_altro: () => gRad('trasporto_prima') !== 'altro' || gVal('trasporto_prima_altro').length > 0,
   valore_atteso_range: () => !!gRad('valore_atteso_range'),
-  valore_rilevato_preciso: () => /^\d+,\d{1,2}$/.test(gVal('valore_rilevato_preciso')),
+  valore_rilevato_preciso: () => /^\d+,\d{2}$/.test(gVal('valore_rilevato_preciso')),
   valore_rilevato_range: () => !!gRad('valore_rilevato_range'),
   trasporto_dopo: () => !!gRad('trasporto_dopo'),
   trasporto_dopo_altro: () => gRad('trasporto_dopo') !== 'altro' || gVal('trasporto_dopo_altro').length > 0,
