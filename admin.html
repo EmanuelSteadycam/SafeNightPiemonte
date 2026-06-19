@@ -71,6 +71,9 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:220px;overflow:hidden;text-ove
 .badge-base{background:#dbeafe;color:#1d4ed8}
 .badge-completa{background:#d1fae5;color:#065f46}
 .empty-row td{text-align:center;padding:3rem;color:#888;font-size:14px}
+.btn-del{padding:4px 10px;font-size:12px;font-weight:600;font-family:inherit;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn-del:hover{background:#fef2f2;border-color:#ef4444}
+.btn-del:active{background:#fee2e2}
 
 /* ---- PAGINATION ---- */
 .pagination{display:flex;align-items:center;gap:.75rem;justify-content:flex-end;flex-wrap:wrap}
@@ -457,7 +460,7 @@ async function loadData() {
 ============================================================ */
 function renderHeader(schema) {
   document.getElementById('table-head').innerHTML =
-    '<tr>' + schema.displayCols.map(c => `<th>${c.l}</th>`).join('') + '</tr>';
+    '<tr>' + schema.displayCols.map(c => `<th>${c.l}</th>`).join('') + '<th></th></tr>';
 }
 
 function cellVal(v, col) {
@@ -483,8 +486,23 @@ function renderTable(rows, schema) {
     return;
   }
   tbody.innerHTML = rows.map(r =>
-    '<tr>' + schema.displayCols.map(c => cellVal(r[c.k], c)).join('') + '</tr>'
+    '<tr>' + schema.displayCols.map(c => cellVal(r[c.k], c)).join('') +
+    `<td><button class="btn-del" onclick="deleteRow('${r.id}')">Elimina</button></td></tr>`
   ).join('');
+}
+
+/* ============================================================
+   DELETE
+============================================================ */
+async function deleteRow(id) {
+  if (!confirm('Eliminare questa scheda? L\'operazione non è reversibile.')) return;
+  const schema = SCHEMAS[activeScheda];
+  const { error } = await db.from(schema.table).delete().eq('id', id);
+  if (error) {
+    alert('Errore durante l\'eliminazione: ' + error.message);
+  } else {
+    loadData();
+  }
 }
 
 /* ============================================================
