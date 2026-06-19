@@ -597,7 +597,7 @@ async function doSend() {
   const { error } = await db.from(TABLE).insert([buildPayload()]);
   if (error) {
     console.error(error);
-    showToast('Errore nel salvataggio. Controlla la connessione e riprova.');
+    showToast('Errore: ' + (error.message || JSON.stringify(error)));
     btn.disabled = false; btn.textContent = '➤ Invia scheda';
   } else {
     document.getElementById('form').style.display = 'none';
