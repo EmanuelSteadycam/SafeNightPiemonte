@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Etilometro Safe Night Piemonte</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;font-size:15px;min-height:100vh}
+
+/* ---- LOGIN ---- */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-box{background:#fff;border:1.5px solid #e5e5e5;border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:360px}
+.login-logo{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:1.5rem}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:.4rem}
+.login-box p{font-size:13.5px;color:#666;margin-bottom:1.8rem}
+.login-box input{display:block;width:100%;padding:12px 14px;font-size:15px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:10px;background:#fafafa;outline:none;margin-bottom:.75rem;transition:border-color .2s}
+.login-box input:focus{border-color:#1a1a1a;background:#fff}
+.btn-login{width:100%;padding:13px;font-size:15px;font-weight:600;font-family:inherit;background:#1a1a1a;color:#fff;border:none;border-radius:10px;cursor:pointer;margin-top:.5rem}
+.btn-login:active{opacity:.8}
+.btn-login:disabled{opacity:.5}
+#login-err{font-size:13px;color:#ef4444;margin-top:.75rem;min-height:1.2em;font-weight:500}
+
+/* ---- LAYOUT ---- */
+#admin-panel{display:none;flex-direction:column;min-height:100vh}
+header{background:#1a1a1a;color:#fff;padding:.9rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-shrink:0}
+.header-title{font-size:15px;font-weight:700;letter-spacing:-.1px}
+.header-right{display:flex;align-items:center;gap:1rem}
+.header-user{font-size:12.5px;color:#aaa}
+.btn-logout{font-size:13px;font-weight:600;font-family:inherit;background:transparent;color:#fff;border:1.5px solid #444;border-radius:8px;padding:6px 14px;cursor:pointer}
+.btn-logout:hover{border-color:#888}
+
+main{flex:1;padding:1.25rem 1.5rem;max-width:1600px;width:100%;margin:0 auto}
+
+/* ---- FILTERS ---- */
+.filters-card{background:#fff;border:1.5px solid #e5e5e5;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px;min-width:130px}
+.filter-group label{font-size:11.5px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.3px}
+.filter-group select,.filter-group input{padding:8px 10px;font-size:14px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:8px;background:#fafafa;outline:none;min-height:38px}
+.filter-group select:focus,.filter-group input:focus{border-color:#1a1a1a}
+.filter-btns{display:flex;gap:.5rem;align-items:flex-end;margin-left:auto;flex-wrap:wrap}
+.btn-filter{padding:8px 18px;font-size:14px;font-weight:600;font-family:inherit;background:#1a1a1a;color:#fff;border:none;border-radius:8px;cursor:pointer;min-height:38px}
+.btn-filter:active{opacity:.8}
+.btn-reset{padding:8px 18px;font-size:14px;font-weight:600;font-family:inherit;background:#fff;color:#1a1a1a;border:1.5px solid #ccc;border-radius:8px;cursor:pointer;min-height:38px}
+.btn-reset:active{background:#f0f0ee}
+
+/* ---- STATS ROW ---- */
+.stats-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem}
+.count-label{font-size:14px;font-weight:600;color:#444}
+.count-label span{color:#1a1a1a;font-size:15px}
+.btn-csv{display:flex;align-items:center;gap:7px;padding:9px 18px;font-size:14px;font-weight:600;font-family:inherit;background:#fff;color:#1a1a1a;border:1.5px solid #ccc;border-radius:9px;cursor:pointer}
+.btn-csv:active{background:#f0f0ee}
+.btn-csv:disabled{opacity:.5}
+
+/* ---- TABLE ---- */
+.table-wrap{background:#fff;border:1.5px solid #e5e5e5;border-radius:12px;overflow:auto;margin-bottom:.75rem}
+table{width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap}
+thead th{position:sticky;top:0;background:#f7f7f5;padding:10px 13px;text-align:left;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#888;border-bottom:1.5px solid #e5e5e5}
+tbody tr{border-bottom:1px solid #f0f0ee;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#fafafa}
+tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600}
+.badge-base{background:#dbeafe;color:#1d4ed8}
+.badge-completa{background:#d1fae5;color:#065f46}
+.empty-row td{text-align:center;padding:3rem;color:#888;font-size:14px}
+
+/* ---- PAGINATION ---- */
+.pagination{display:flex;align-items:center;gap:.75rem;justify-content:flex-end;flex-wrap:wrap}
+.page-label{font-size:13.5px;color:#666;font-weight:500}
+.btn-page{padding:7px 16px;font-size:13.5px;font-weight:600;font-family:inherit;background:#fff;color:#1a1a1a;border:1.5px solid #ccc;border-radius:8px;cursor:pointer;min-height:36px}
+.btn-page:disabled{opacity:.35;cursor:default}
+.btn-page:not(:disabled):active{background:#f0f0ee}
+
+/* ---- LOADING ---- */
+.loading{text-align:center;padding:3rem;color:#888;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <p class="login-logo">Rete Safe Night Piemonte</p>
+    <h1>Pannello Admin</h1>
+    <p>Accedi con le tue credenziali per visualizzare le schede etilometro.</p>
+    <form onsubmit="doLogin(event)">
+      <input type="email" id="email" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+      <button class="btn-login" type="submit" id="login-btn">Accedi</button>
+      <p id="login-err"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div id="admin-panel">
+  <header>
+    <span class="header-title">Etilometro — Admin</span>
+    <div class="header-right">
+      <span class="header-user" id="user-email"></span>
+      <button class="btn-logout" onclick="doLogout()">Esci</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Filters -->
+    <div class="filters-card">
+      <div class="filter-group">
+        <label>ASL</label>
+        <select id="f-asl">
+          <option value="">Tutte le ASL</option>
+          <option>ASL AL</option><option>ASL AT</option><option>ASL BI</option>
+          <option>ASL CN1</option><option>ASL CN2</option><option>ASL NO</option>
+          <option>ASL Città di Torino</option><option>ASL TO3</option>
+          <option>ASL TO4</option><option>ASL TO5</option><option>ASL VC</option>
+          <option>ASL VCO</option><option>NEUTRAVEL</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Data evento dal</label>
+        <input type="date" id="f-da">
+      </div>
+      <div class="filter-group">
+        <label>Data evento al</label>
+        <input type="date" id="f-a">
+      </div>
+      <div class="filter-group">
+        <label>Tipo risposta</label>
+        <select id="f-tipo">
+          <option value="">Tutti i tipi</option>
+          <option value="base">Base</option>
+          <option value="completa">Completa</option>
+        </select>
+      </div>
+      <div class="filter-btns">
+        <button class="btn-reset" onclick="resetFilters()">Reset</button>
+        <button class="btn-filter" onclick="applyFilters()">Filtra</button>
+      </div>
+    </div>
+
+    <!-- Stats + Export -->
+    <div class="stats-row">
+      <p class="count-label" id="count-label">Caricamento…</p>
+      <button class="btn-csv" id="btn-csv" onclick="exportCSV()">⬇ Esporta CSV</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data caric.</th>
+            <th>ASL</th>
+            <th>Data evento</th>
+            <th>Luogo tipo</th>
+            <th>Luogo nome</th>
+            <th>Tempo da bere</th>
+            <th>Genere</th>
+            <th>Sesso ass.</th>
+            <th>Età</th>
+            <th>Patente</th>
+            <th>Pat. ritirata</th>
+            <th>Trasp. prima</th>
+            <th>V. atteso</th>
+            <th>V. rilevato</th>
+            <th>Trasp. dopo</th>
+            <th>Tipo</th>
+            <th>Stima</th>
+            <th>Birra</th>
+            <th>Vino</th>
+            <th>Shot</th>
+            <th>Aper.</th>
+            <th>Mangiato</th>
+            <th>Sostanze</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="23" class="loading">Caricamento…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="btn-page" id="btn-prev" onclick="prevPage()" disabled>← Prec</button>
+      <span class="page-label" id="page-label">Pagina 1 di 1</span>
+      <button class="btn-page" id="btn-next" onclick="nextPage()" disabled>Succ →</button>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE SUPABASE
+============================================================ */
+const SUPABASE_URL = 'https://zotrurzfsaerabpqgjiq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdHJ1cnpmc2FlcmFicHFnamlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2ODAzOTcsImV4cCI6MjA4OTI1NjM5N30.V1cfWx_L5YoKnCduz-B-ecb_jzCmqh3X4NLr6YVt7h4';
+const TABLE = 'etilometro_risposte';
+/* ============================================================ */
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const PAGE_SIZE = 50;
+let currentPage = 0;
+let totalCount = 0;
+
+/* ---- Auth ---- */
+db.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    document.getElementById('user-email').textContent = session.user.email;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'flex';
+    loadData();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-panel').style.display = 'none';
+  }
+});
+
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Accesso…';
+  const { error } = await db.auth.signInWithPassword({
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value,
+  });
+  if (error) {
+    document.getElementById('login-err').textContent = 'Email o password non corretti.';
+    btn.disabled = false; btn.textContent = 'Accedi';
+  }
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+}
+
+/* ---- Filters ---- */
+function getFilters() {
+  return {
+    asl:  document.getElementById('f-asl').value,
+    da:   document.getElementById('f-da').value,
+    a:    document.getElementById('f-a').value,
+    tipo: document.getElementById('f-tipo').value,
+  };
+}
+
+function applyQuery(q, f) {
+  if (f.asl)  q = q.eq('asl', f.asl);
+  if (f.da)   q = q.gte('data_evento', f.da);
+  if (f.a)    q = q.lte('data_evento', f.a);
+  if (f.tipo) q = q.eq('tipo_risposta', f.tipo);
+  return q;
+}
+
+function applyFilters() { currentPage = 0; loadData(); }
+function resetFilters() {
+  ['f-asl','f-da','f-a','f-tipo'].forEach(id => document.getElementById(id).value = '');
+  currentPage = 0; loadData();
+}
+function prevPage() { if (currentPage > 0) { currentPage--; loadData(); } }
+function nextPage() { if ((currentPage + 1) * PAGE_SIZE < totalCount) { currentPage++; loadData(); } }
+
+/* ---- Load data ---- */
+async function loadData() {
+  document.getElementById('count-label').textContent = 'Caricamento…';
+  document.getElementById('table-body').innerHTML = '<tr><td colspan="23" class="loading">Caricamento…</td></tr>';
+
+  const f = getFilters();
+  let q = db.from(TABLE)
+    .select('*', { count: 'exact' })
+    .order('creato_il', { ascending: false })
+    .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
+  q = applyQuery(q, f);
+
+  const { data, count, error } = await q;
+  if (error) {
+    document.getElementById('count-label').textContent = 'Errore nel caricamento.';
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="23" class="loading">Errore: ' + error.message + '</td></tr>';
+    return;
+  }
+
+  totalCount = count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  document.getElementById('count-label').innerHTML = '<span>' + totalCount + '</span> schede trovate';
+  document.getElementById('page-label').textContent = 'Pagina ' + (currentPage + 1) + ' di ' + totalPages;
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = (currentPage + 1) * PAGE_SIZE >= totalCount;
+
+  renderTable(data || []);
+}
+
+/* ---- Render ---- */
+function cell(v) {
+  if (v === null || v === undefined || v === '') return '<td style="color:#ccc">—</td>';
+  if (Array.isArray(v)) v = v.join(', ');
+  return '<td title="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</td>';
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('table-body');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="23">Nessuna scheda trovata con i filtri selezionati.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `<tr>
+    ${cell(r.data_caricamento)}
+    ${cell(r.asl)}
+    ${cell(r.data_evento)}
+    ${cell(r.luogo_tipo)}
+    ${cell(r.luogo_nome)}
+    ${cell(r.tempo_da_bere)}
+    ${cell(r.genere)}
+    ${cell(r.sesso_assegnato)}
+    ${cell(r.eta)}
+    ${cell(r.patente)}
+    ${cell(r.patente_ritirata)}
+    ${cell(r.trasporto_prima)}
+    ${cell(r.valore_atteso_range)}
+    ${cell(r.valore_rilevato_range)}
+    ${cell(r.trasporto_dopo)}
+    <td>${r.tipo_risposta ? '<span class="badge badge-' + r.tipo_risposta + '">' + r.tipo_risposta + '</span>' : '<span style="color:#ccc">—</span>'}</td>
+    ${cell(r.stima_consumo)}
+    ${cell(r.bevute_birra)}
+    ${cell(r.bevute_vino)}
+    ${cell(r.bevute_shot)}
+    ${cell(r.bevute_aperitivo)}
+    ${cell(r.ha_mangiato)}
+    ${cell(r.sostanze)}
+  </tr>`).join('');
+}
+
+/* ---- Export CSV ---- */
+const ALL_COLS = [
+  ['id','ID'],['creato_il','Creato il'],['data_caricamento','Data caricamento'],
+  ['asl','ASL'],['data_evento','Data evento'],['luogo_tipo','Luogo tipo'],
+  ['luogo_nome','Luogo nome'],['tempo_da_bere','Tempo da bere'],['genere','Genere'],
+  ['sesso_assegnato','Sesso assegnato'],['eta','Età'],['patente','Patente'],
+  ['patente_ritirata','Patente ritirata'],['trasporto_prima','Trasporto prima'],
+  ['trasporto_prima_altro','Trasporto prima (altro)'],['valore_atteso_range','Valore atteso range'],
+  ['valore_atteso_preciso','Valore atteso preciso'],['valore_rilevato_range','Valore rilevato range'],
+  ['valore_rilevato_preciso','Valore rilevato preciso'],['trasporto_dopo','Trasporto dopo'],
+  ['trasporto_dopo_altro','Trasporto dopo (altro)'],['tipo_risposta','Tipo risposta'],
+  ['stima_consumo','Stima consumo'],['bevute_birra','Birra (bicchieri)'],
+  ['bevute_vino','Vino (bicchieri)'],['bevute_shot','Shot'],['bevute_aperitivo','Aperitivi/Cocktail'],
+  ['ha_mangiato','Ha mangiato'],['ha_mangiato_da_quanto','Mangiato da quanto'],
+  ['sostanze','Sostanze'],['sostanze_altro','Sostanze (altro)'],
+];
+
+function csvEsc(v) {
+  if (v === null || v === undefined) return '';
+  if (Array.isArray(v)) v = v.join('; ');
+  v = String(v);
+  return (v.includes(',') || v.includes('"') || v.includes('\n'))
+    ? '"' + v.replace(/"/g, '""') + '"'
+    : v;
+}
+
+async function exportCSV() {
+  const btn = document.getElementById('btn-csv');
+  btn.disabled = true; btn.textContent = 'Esportazione…';
+
+  let all = [], from = 0;
+  const f = getFilters();
+  while (true) {
+    let q = db.from(TABLE).select('*').order('creato_il', { ascending: false }).range(from, from + 999);
+    q = applyQuery(q, f);
+    const { data, error } = await q;
+    if (error || !data || !data.length) break;
+    all = all.concat(data);
+    if (data.length < 1000) break;
+    from += 1000;
+  }
+
+  const header = ALL_COLS.map(c => c[1]).join(',');
+  const rows = all.map(r => ALL_COLS.map(([k]) => csvEsc(r[k])).join(','));
+  const csv = '﻿' + [header, ...rows].join('\r\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'etilometro_' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.disabled = false; btn.textContent = '⬇ Esporta CSV';
+}
+</script>
+</body>
+</html>
