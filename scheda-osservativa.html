@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Scheda Osservativa – Rete Safe Night Piemonte</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;min-height:100vh;padding:1.25rem 1rem 4rem;font-size:16px;line-height:1.4}
+.wrap{max-width:480px;margin:0 auto}
+
+.site-header{margin-bottom:1.75rem}
+.site-header h1{font-size:19px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px;line-height:1.3}
+.site-header p{font-size:13.5px;color:#666;line-height:1.55}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:5px 13px;border-radius:99px;margin-bottom:1rem}
+.pill-1{background:#dbeafe;color:#1d4ed8}
+.pill-2{background:#fef3c7;color:#92400e}
+.pill-3{background:#fee2e2;color:#991b1b}
+.pill-4{background:#d1fae5;color:#065f46}
+.pill-5{background:#ede9fe;color:#6d28d9}
+.pill-6{background:#fce7f3;color:#9d174d}
+
+.qcard{background:#fff;border:1.5px solid #e5e5e5;border-radius:14px;padding:1.1rem 1.1rem .95rem;margin-bottom:.75rem;transition:border-color .2s}
+.qcard.err{border-color:#ef4444}
+.qlabel{font-size:15.5px;font-weight:600;line-height:1.4;margin-bottom:3px}
+.req{color:#ef4444;margin-left:2px}
+.qhint{font-size:12.5px;color:#888;margin-bottom:11px}
+.errmsg{font-size:12.5px;color:#ef4444;margin-top:9px;display:none;font-weight:500}
+.qcard.err .errmsg{display:block}
+
+/* Radio opts */
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid #e5e5e5;border-radius:11px;cursor:pointer;transition:background .15s,border-color .15s;user-select:none;min-height:48px}
+.opt:active{background:#eee}
+.opt.sel{background:#eef2ff;border-color:#1a1a1a}
+.opt input[type=radio]{accent-color:#1a1a1a;width:20px;height:20px;flex-shrink:0;cursor:pointer}
+.opt span{font-size:15px;font-weight:500;line-height:1.3}
+
+/* Checkbox opts */
+.cb-opts{display:flex;flex-direction:column;gap:7px}
+.cb-opt{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1.5px solid #e5e5e5;border-radius:11px;cursor:pointer;transition:background .15s,border-color .15s;user-select:none;min-height:46px}
+.cb-opt:active{background:#eee}
+.cb-opt.sel{background:#f0fdf4;border-color:#16a34a}
+.cb-opt input[type=checkbox]{accent-color:#16a34a;width:20px;height:20px;flex-shrink:0;cursor:pointer;margin-top:1px}
+.cb-opt span{font-size:14.5px;font-weight:500;line-height:1.35}
+
+select.big-select{width:100%;padding:14px;font-size:16px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:11px;background:#fafafa url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="9"><path d="M1 1l6 6 6-6" stroke="%23555" stroke-width="2" fill="none"/></svg>') no-repeat right 16px center;appearance:none;-webkit-appearance:none;min-height:50px}
+select.big-select:focus{border-color:#1a1a1a;outline:none}
+
+input[type=text],input[type=date]{width:100%;padding:13px 14px;font-size:16px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:11px;background:#fafafa;outline:none;transition:border-color .2s;min-height:48px}
+input[type=text]:focus,input[type=date]:focus{border-color:#1a1a1a;background:#fff}
+
+.sub-field{margin-top:10px;display:none}
+.sub-field.show{display:block}
+.sub-field input[type=text]{font-size:14.5px;padding:11px 13px;min-height:44px}
+
+.divider{border:none;border-top:1px solid #e0e0e0;margin:1.6rem 0}
+
+.btn-final{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;font-size:15.5px;font-weight:700;font-family:inherit;background:#1a1a1a;color:#fff;border:none;border-radius:13px;cursor:pointer;margin-top:1.3rem;min-height:52px}
+.btn-final:active{opacity:.78}
+.btn-final:disabled{opacity:.5}
+
+#ok{display:none}
+.ok-wrap{text-align:center;padding:3.5rem 1rem}
+.ok-icon{font-size:46px;margin-bottom:1rem}
+.ok-title{font-size:20px;font-weight:700;margin-bottom:7px}
+.ok-sub{font-size:14px;color:#666;line-height:1.6;margin-bottom:1.4rem}
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;font-size:15px;font-weight:600;font-family:inherit;background:#1a1a1a;color:#fff;border:none;border-radius:12px;cursor:pointer;min-height:50px}
+
+#toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#ef4444;color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:500;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;max-width:90vw;text-align:center;z-index:99}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.qcard{scroll-margin-top:18px}
+
+.warn{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:.9rem 1rem;font-size:12.5px;color:#991b1b;line-height:1.5;margin-bottom:1.1rem}
+.warn b{color:#7f1d1d}
+
+.ora-hint{font-size:11.5px;color:#e85b10;font-weight:600;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap" id="form">
+
+  <header class="site-header">
+    <h1>Scheda Osservativa<br>Rete Safe Night Piemonte</h1>
+    <p>Compila tutti i campi obbligatori. I campi a scelta multipla permettono più risposte.</p>
+  </header>
+
+  <!-- ===== SEZIONE 1: CONTATTI ===== -->
+  <span class="pill pill-1">● Contatti</span>
+
+  <div class="warn"><b>ATTENZIONE:</b> la data qui sotto è quella di caricamento della scheda da parte degli operatori, NON la data dell'evento.</div>
+
+  <div class="qcard" id="c-data_caricamento">
+    <p class="qlabel">Data di caricamento scheda<span class="req">*</span></p>
+    <input type="date" id="data_caricamento">
+    <p class="errmsg">Inserisci la data per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-asl">
+    <p class="qlabel">ASL<span class="req">*</span></p>
+    <select class="big-select" id="asl-select">
+      <option value="">Seleziona…</option>
+      <option>ASL AL</option><option>ASL AT</option><option>ASL BI</option>
+      <option>ASL CN1</option><option>ASL CN2</option><option>ASL NO</option>
+      <option>ASL Città di Torino</option><option>ASL TO3</option>
+      <option>ASL TO4</option><option>ASL TO5</option><option>ASL VC</option>
+      <option>ASL VCO</option><option>NEUTRAVEL</option>
+    </select>
+    <p class="errmsg">Seleziona l'ASL per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-data_evento">
+    <p class="qlabel">Data evento<span class="req">*</span></p>
+    <input type="date" id="data_evento">
+    <p class="errmsg">Inserisci la data dell'evento per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-luogo_tipo">
+    <p class="qlabel">Luogo<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="luogo_tipo" value="citta_metropolitana"><span>Città metropolitana</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="capoluogo"><span>Capoluogo di Provincia</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="citta_20mila"><span>Città (oltre 20 mila abitanti)</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="paese"><span>Paese</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-luogo_nome">
+    <p class="qlabel">Specificare nome del luogo<span class="req">*</span></p>
+    <p class="qhint">Scrivere in MAIUSCOLO</p>
+    <input type="text" id="luogo_nome" placeholder="ES. TORINO" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
+    <p class="errmsg">Inserisci il nome del luogo per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-denominazione_evento">
+    <p class="qlabel">Denominazione evento / Sagra / Festival…<span class="req">*</span></p>
+    <p class="qhint">Scrivere in MAIUSCOLO</p>
+    <input type="text" id="denominazione_evento" placeholder="ES. FESTA DELLA BIRRA" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
+    <p class="errmsg">Inserisci la denominazione dell'evento</p>
+  </div>
+
+  <div class="qcard" id="c-ora_inizio">
+    <p class="qlabel">Ora inizio<span class="req">*</span></p>
+    <p class="qhint">Usa la virgola come separatore: esempio <strong>22,30</strong></p>
+    <input type="text" id="ora_inizio" placeholder="22,30" maxlength="10" inputmode="decimal">
+    <p class="ora-hint">NON usare il punto (.) o i due punti (:)</p>
+    <p class="errmsg">Inserisci l'orario nel formato corretto (es. 22,30)</p>
+  </div>
+
+  <div class="qcard" id="c-ora_fine">
+    <p class="qlabel">Ora fine<span class="req">*</span></p>
+    <p class="qhint">Usa la virgola come separatore: esempio <strong>02,30</strong>. Per orari dopo la mezzanotte inserire 0 prima: es. <strong>02,30</strong></p>
+    <input type="text" id="ora_fine" placeholder="02,30" maxlength="10" inputmode="decimal">
+    <p class="ora-hint">NON usare il punto (.) o i due punti (:)</p>
+    <p class="errmsg">Inserisci l'orario nel formato corretto (es. 02,30)</p>
+  </div>
+
+  <div class="qcard" id="c-variazioni_orario">
+    <p class="qlabel">Variazioni orario uscita<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="variazioni_orario" value="nessuna"><span>Nessuna variazione oraria</span></label>
+      <label class="opt"><input type="radio" name="variazioni_orario" value="chiusura_anticipata"><span>Chiusura anticipata</span></label>
+      <label class="opt"><input type="radio" name="variazioni_orario" value="chiusura_posticipata"><span>Chiusura posticipata</span></label>
+      <label class="opt"><input type="radio" name="variazioni_orario" value="maltempo"><span>Causa maltempo</span></label>
+      <label class="opt"><input type="radio" name="variazioni_orario" value="poca_affluenza"><span>Causa poca affluenza</span></label>
+      <label class="opt"><input type="radio" name="variazioni_orario" value="molta_affluenza"><span>Causa molta affluenza</span></label>
+      <label class="opt"><input type="radio" name="variazioni_orario" value="altro" onclick="toggleSub('sub-variazioni_altro', true)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-variazioni_altro">
+      <input type="text" id="variazioni_orario_altro" placeholder="Specificare…">
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <!-- ===== SEZIONE 2: SOGGETTI PRESENTI ===== -->
+  <hr class="divider">
+  <span class="pill pill-2">● Soggetti presenti</span>
+
+  <div class="qcard">
+    <p class="qlabel">Età</p>
+    <p class="qhint">Puoi selezionare più fasce</p>
+    <div class="cb-opts" id="eta-group">
+      <label class="cb-opt"><input type="checkbox" name="eta" value="meno_16"><span>Meno di 16 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="16-17"><span>16-17 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="18-20"><span>18-20 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="21-25"><span>21-25 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="26-30"><span>26-30 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="31-35"><span>31-35 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="36-40"><span>36-40 anni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="eta" value="piu_40"><span>Più di 40 anni</span></label>
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Prevalenza genere</p>
+    <div class="cb-opts" id="prevalenza_genere-group">
+      <label class="cb-opt"><input type="checkbox" name="prevalenza_genere" value="nessuna_prevalenza"><span>Nessuna prevalenza</span></label>
+      <label class="cb-opt"><input type="checkbox" name="prevalenza_genere" value="prevalenza_M"><span>Prevalenza M</span></label>
+      <label class="cb-opt"><input type="checkbox" name="prevalenza_genere" value="prevalenza_F"><span>Prevalenza F</span></label>
+      <label class="cb-opt"><input type="checkbox" name="prevalenza_genere" value="altro" onchange="toggleSubCb('sub-prev_genere_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-prev_genere_altro">
+      <input type="text" id="prevalenza_genere_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Stile</p>
+    <p class="qhint">Puoi selezionare più stili</p>
+    <div class="cb-opts" id="stile-group">
+      <label class="cb-opt"><input type="checkbox" name="stile" value="fighetto"><span>Fighetto</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="tamarro"><span>Tamarro</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="trapper"><span>Trapper</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="casual"><span>Casual</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="alternativo"><span>Alternativo</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="queer"><span>Queer</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="maranza"><span>Maranza</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="sportivo"><span>Sportivo</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="elegante"><span>Elegante</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="punk"><span>Punk</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="clubbing"><span>Clubbing</span></label>
+      <label class="cb-opt"><input type="checkbox" name="stile" value="altro" onchange="toggleSubCb('sub-stile_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-stile_altro">
+      <input type="text" id="stile_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Altri soggetti presenti</p>
+    <div class="cb-opts" id="altri_soggetti-group">
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="personale_sanitario"><span>Altro Personale sanitario</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="forze_ordine"><span>Forze dell'Ordine</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="colleghi_altri_servizi"><span>Colleghe/i altri servizi e progetti</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="altri_enti" onchange="toggleSubCb('sub-altri_soggetti_enti', this)"><span>Altri Enti o Associazioni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="gestori_locale"><span>Gestori/e del locale</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="organizzatori_evento"><span>Organizzatori/e dell'evento</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="area_pronto_soccorso"><span>Area di Pronto Soccorso</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="volontari_pr"><span>Volontari/e e PR</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="staff"><span>Staff</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="security"><span>Security</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="servizio_taxi"><span>Servizio Taxi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="venditori_ambulanti"><span>Venditori ambulanti</span></label>
+      <label class="cb-opt"><input type="checkbox" name="altri_soggetti" value="altro" onchange="toggleSubCb('sub-altri_soggetti_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-altri_soggetti_enti">
+      <input type="text" id="altri_soggetti_enti" placeholder="Specificare Altri Enti o Associazioni…">
+    </div>
+    <div class="sub-field" id="sub-altri_soggetti_altro">
+      <input type="text" id="altri_soggetti_altro" placeholder="Specificare Altro…">
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE 3: INTERVENTI e RISCHI ===== -->
+  <hr class="divider">
+  <span class="pill pill-3">● Interventi e rischi</span>
+
+  <div class="qcard">
+    <p class="qlabel">Interventi</p>
+    <div class="cb-opts" id="interventi-group">
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="forze_ordine"><span>Forze dell'Ordine</span></label>
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="security"><span>Security</span></label>
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="gestori_staff"><span>Gestori/e e Staff del locale</span></label>
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="ambulanza"><span>Ambulanza</span></label>
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="rimozione_auto"><span>Rimozione auto</span></label>
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="artisti_strada"><span>Artisti/e di strada</span></label>
+      <label class="cb-opt"><input type="checkbox" name="interventi" value="altro" onchange="toggleSubCb('sub-interventi_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-interventi_altro">
+      <input type="text" id="interventi_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Rischi</p>
+    <div class="cb-opts" id="rischi-group">
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="volumi_musica"><span>Volumi musica / Rumore</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="violenza"><span>Violenza</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="sex_offenders"><span>Sex offenders</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="sostanze_illegali"><span>Uso di sostanze illegali</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="affollamento"><span>Affollamento</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="passaggio_auto"><span>Passaggio auto</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="vetro"><span>Vetro</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="abuso_alcol_sostanze"><span>Abuso di alcol e altre sostanze</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="ostacoli_barriere"><span>Presenza di ostacoli o barriere</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="scarsa_acqua"><span>Scarsa accessibilità all'acqua (costo/code)</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="poca_inclusione"><span>Poca inclusione e rispetto</span></label>
+      <label class="cb-opt"><input type="checkbox" name="rischi" value="altro" onchange="toggleSubCb('sub-rischi_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-rischi_altro">
+      <input type="text" id="rischi_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE 4: GRUPPI ===== -->
+  <hr class="divider">
+  <span class="pill pill-4">● Gruppi</span>
+
+  <div class="qcard">
+    <p class="qlabel">Caratteristiche</p>
+    <div class="cb-opts" id="gruppi_caratteristiche-group">
+      <label class="cb-opt"><input type="checkbox" name="gruppi_caratteristiche" value="pochi_gruppi"><span>Pochi gruppi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_caratteristiche" value="prevalenza_coppie"><span>Prevalenza coppie</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_caratteristiche" value="prevalenza_gruppi"><span>Prevalenza gruppi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_caratteristiche" value="prevalenza_famiglie"><span>Prevalenza famiglie</span></label>
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Numero componenti</p>
+    <div class="cb-opts" id="gruppi_numero-group">
+      <label class="cb-opt"><input type="checkbox" name="gruppi_numero_componenti" value="piccolo_3-5"><span>Piccolo: 3-5 persone</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_numero_componenti" value="medio_6-9"><span>Medio: 6-9 persone</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_numero_componenti" value="grande_10+"><span>Grande: da 10 a più persone</span></label>
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Prevalenza genere nei gruppi</p>
+    <div class="cb-opts" id="gruppi_genere-group">
+      <label class="cb-opt"><input type="checkbox" name="gruppi_prevalenza_genere" value="eterogenei"><span>Eterogenei per genere (no prevalenza)</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_prevalenza_genere" value="prevalenza_maschile"><span>Prevalenza maschile</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_prevalenza_genere" value="prevalenza_femminile"><span>Prevalenza femminile</span></label>
+      <label class="cb-opt"><input type="checkbox" name="gruppi_prevalenza_genere" value="altro" onchange="toggleSubCb('sub-gruppi_genere_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-gruppi_genere_altro">
+      <input type="text" id="gruppi_prevalenza_genere_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE 5: PRATICHE e FRUIZIONE SPAZI ===== -->
+  <hr class="divider">
+  <span class="pill pill-5">● Pratiche e fruizione spazi</span>
+
+  <div class="qcard">
+    <p class="qlabel">Pratiche</p>
+    <p class="qhint">Puoi selezionare più opzioni</p>
+    <div class="cb-opts" id="pratiche-group">
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="consumo_alcol"><span>Consumo di alcol</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="consumo_alcol_asporto"><span>Consumo di alcol d'asporto (pic-nic alcolico)</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="consumo_alcol_sostanze_mix"><span>Consumo di alcol e altre sostanze (mix)</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="ballo_divertimento"><span>Ballo e divertimento</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="chill_out"><span>Chill out</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="movimento"><span>Movimento</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="seduti_terra"><span>Seduti a terra</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="feste_laurea_compleanno"><span>Feste di laurea, compleanno, nubilato/celibato</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="cori_applausi_urla"><span>Cori, applausi e urla</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="musica_casse_impianti"><span>Musica da casse o impianti</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="vandalismo"><span>Vandalismo o comportamenti a rischio per gli altri</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="atteggiamenti_osceni"><span>Atteggiamenti osceni</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="utilizzo_rischioso_spazi"><span>Utilizzo rischioso degli spazi e degli arredi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="pratiche" value="altro" onchange="toggleSubCb('sub-pratiche_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-pratiche_altro">
+      <input type="text" id="pratiche_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Fruizione spazi</p>
+    <div class="cb-opts" id="fruizione_spazi-group">
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="movimento_passaggio"><span>Movimento e passaggio</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="stazionamento_piedi"><span>Stazionamento in piedi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="seduti_terra"><span>Seduti a terra</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="seduti_tavoli_dehor"><span>Seduti ai tavoli/dehor</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="intralcio_traffico"><span>Intralcio del traffico o della carreggiata</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="assembramenti"><span>Assembramenti</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="utilizzo_improprio_spazi"><span>Utilizzo improprio degli spazi e degli arredi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="utilizzo_rischioso"><span>Utilizzo rischioso degli spazi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="fruizione_spazi" value="altro" onchange="toggleSubCb('sub-fruizione_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-fruizione_altro">
+      <input type="text" id="fruizione_spazi_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE 6: ESIGENZE e RICHIESTE ===== -->
+  <hr class="divider">
+  <span class="pill pill-6">● Esigenze e richieste</span>
+
+  <div class="qcard">
+    <p class="qlabel">Tematiche</p>
+    <p class="qhint">Puoi selezionare più opzioni</p>
+    <div class="cb-opts" id="tematiche-group">
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="counseling_alcol"><span>Counseling e misurazione alcolemica</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="counseling_sostanze"><span>Counseling altre sostanze</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="counseling_ist"><span>Counseling IST</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="counseling_genitore"><span>Counseling a genitore/insegnante/sanitario</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="counseling_relazionale"><span>Counseling relazionale-affettivo</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="indirizzamento_servizi"><span>Indirizzamento verso altri Servizi</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="interventi_sanitari"><span>Interventi sanitari</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="richiesta_chill_out"><span>Richiesta di spazio Chill Out</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="drug_checking"><span>Drug Checking</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="test_metaboliti"><span>Test metaboliti o aspetti legali</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="distribuzione_materiale"><span>Distribuzione materiale RdD</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="politiche_sostanze"><span>Politiche e approcci alle sostanze</span></label>
+      <label class="cb-opt"><input type="checkbox" name="tematiche" value="altro" onchange="toggleSubCb('sub-tematiche_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-tematiche_altro">
+      <input type="text" id="tematiche_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Organizzazione intervento</p>
+    <p class="qhint">Puoi selezionare più opzioni</p>
+    <div class="cb-opts" id="organizzazione-group">
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="disponibilita_organizzatori"><span>Disponibilità Organizzatori/e e Gestori/e</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="coerenza_sopralluogo"><span>Coerenza con il sopralluogo</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="presenza_camper"><span>Presenza del camper</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="parcheggio_riservato"><span>Parcheggio riservato per il mezzo</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="accessibilita_operatori"><span>Accessibilità di operatori/e (pass)</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="visibilita_postazione"><span>Visibilità della postazione</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="accessibilita_postazione"><span>Accessibilità alla postazione</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="fonti_acqua"><span>Fonti d'acqua potabile ed accessibile</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="visibilita_comunicazione"><span>Visibilità nella comunicazione</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="buona_affluenza"><span>Buona affluenza di frequentatori/e</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="buona_collaborazione"><span>Buona collaborazione con gli altri soggetti</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="numero_adeguato_operatori"><span>Numero adeguato di operatori/e per turno</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="zona_chill_out"><span>Presenza di zona Chill out/Decompressione</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="materiale_sufficiente"><span>Materiale sufficiente a coprire l'intervento</span></label>
+      <label class="cb-opt"><input type="checkbox" name="organizzazione" value="altro" onchange="toggleSubCb('sub-organizzazione_altro', this)"><span>Altro</span></label>
+    </div>
+    <div class="sub-field" id="sub-organizzazione_altro">
+      <input type="text" id="organizzazione_altro" placeholder="Specificare…">
+    </div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Note e osservazioni</p>
+    <textarea id="note" rows="4" style="width:100%;padding:13px 14px;font-size:15px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:11px;background:#fafafa;outline:none;resize:vertical" placeholder="Inserisci eventuali note…"></textarea>
+  </div>
+
+  <button class="btn-final" id="btn-final" onclick="doSend()">➤ Invia scheda</button>
+
+</div>
+
+<!-- Success -->
+<div id="ok">
+  <div class="ok-wrap">
+    <div class="ok-icon">✓</div>
+    <p class="ok-title">Scheda inviata!</p>
+    <p class="ok-sub">I dati sono stati salvati correttamente.</p>
+    <button class="btn-primary" style="margin-top:1.5rem" onclick="location.reload()">+ Nuova scheda</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE SUPABASE
+============================================================ */
+const SUPABASE_URL = 'https://zotrurzfsaerabpqgjiq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdHJ1cnpmc2FlcmFicHFnamlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2ODAzOTcsImV4cCI6MjA4OTI1NjM5N30.V1cfWx_L5YoKnCduz-B-ecb_jzCmqh3X4NLr6YVt7h4';
+const TABLE = 'scheda_osservativa';
+/* ============================================================ */
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+document.getElementById('data_caricamento').value = new Date().toISOString().slice(0,10);
+
+/* Radio styling */
+document.querySelectorAll('input[type=radio]').forEach(i => {
+  i.addEventListener('change', () => {
+    document.querySelectorAll(`[name="${i.name}"]`).forEach(r => r.closest('.opt').classList.remove('sel'));
+    i.closest('.opt').classList.add('sel');
+  });
+});
+
+/* Checkbox styling */
+document.querySelectorAll('input[type=checkbox]').forEach(i => {
+  i.addEventListener('change', () => {
+    i.closest('.cb-opt').classList.toggle('sel', i.checked);
+  });
+});
+
+/* Show/hide "altro" sub-fields */
+function toggleSub(id, show) {
+  document.getElementById(id)?.classList.toggle('show', show);
+}
+function toggleSubCb(id, cb) {
+  document.getElementById(id)?.classList.toggle('show', cb.checked);
+}
+
+/* Radio "altro" handling */
+document.querySelectorAll('input[type=radio][value=altro]').forEach(r => {
+  r.addEventListener('change', () => {
+    const subId = 'sub-variazioni_altro';
+    toggleSub(subId, r.checked);
+  });
+});
+document.querySelectorAll('input[name=variazioni_orario]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (r.value !== 'altro') toggleSub('sub-variazioni_altro', false);
+  });
+});
+
+/* Helpers */
+function gVal(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function gRad(n) { const r = document.querySelector(`input[name="${n}"]:checked`); return r ? r.value : ''; }
+function gCbs(n) { return [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(c => c.value); }
+
+/* Validation */
+function validate() {
+  let ok = true, firstBad = null;
+  const checks = {
+    data_caricamento: () => !!gVal('data_caricamento'),
+    asl: () => !!gVal('asl-select'),
+    data_evento: () => !!gVal('data_evento'),
+    luogo_tipo: () => !!gRad('luogo_tipo'),
+    luogo_nome: () => gVal('luogo_nome').length > 0,
+    denominazione_evento: () => gVal('denominazione_evento').length > 0,
+    ora_inizio: () => /^\d{1,2},\d{2}$/.test(gVal('ora_inizio')),
+    ora_fine: () => /^\d{1,2},\d{2}$/.test(gVal('ora_fine')),
+    variazioni_orario: () => !!gRad('variazioni_orario'),
+  };
+  Object.entries(checks).forEach(([id, fn]) => {
+    const card = document.getElementById('c-' + id);
+    if (!card) return;
+    const v = fn();
+    card.classList.toggle('err', !v);
+    if (!v && ok) { ok = false; firstBad = id; }
+  });
+  if (!ok && firstBad) document.getElementById('c-' + firstBad)?.scrollIntoView({ behavior:'smooth', block:'center' });
+  return ok;
+}
+
+/* Build payload */
+function buildPayload() {
+  return {
+    data_caricamento: gVal('data_caricamento'),
+    asl: gVal('asl-select'),
+    data_evento: gVal('data_evento'),
+    luogo_tipo: gRad('luogo_tipo'),
+    luogo_nome: gVal('luogo_nome'),
+    denominazione_evento: gVal('denominazione_evento'),
+    ora_inizio: gVal('ora_inizio'),
+    ora_fine: gVal('ora_fine'),
+    variazioni_orario: gRad('variazioni_orario'),
+    variazioni_orario_altro: gVal('variazioni_orario_altro') || null,
+    eta: gCbs('eta'),
+    prevalenza_genere: gCbs('prevalenza_genere'),
+    prevalenza_genere_altro: gVal('prevalenza_genere_altro') || null,
+    stile: gCbs('stile'),
+    stile_altro: gVal('stile_altro') || null,
+    altri_soggetti: gCbs('altri_soggetti'),
+    altri_soggetti_enti: gVal('altri_soggetti_enti') || null,
+    altri_soggetti_altro: gVal('altri_soggetti_altro') || null,
+    interventi: gCbs('interventi'),
+    interventi_altro: gVal('interventi_altro') || null,
+    rischi: gCbs('rischi'),
+    rischi_altro: gVal('rischi_altro') || null,
+    gruppi_caratteristiche: gCbs('gruppi_caratteristiche'),
+    gruppi_numero_componenti: gCbs('gruppi_numero_componenti'),
+    gruppi_prevalenza_genere: gCbs('gruppi_prevalenza_genere'),
+    gruppi_prevalenza_genere_altro: gVal('gruppi_prevalenza_genere_altro') || null,
+    pratiche: gCbs('pratiche'),
+    pratiche_altro: gVal('pratiche_altro') || null,
+    fruizione_spazi: gCbs('fruizione_spazi'),
+    fruizione_spazi_altro: gVal('fruizione_spazi_altro') || null,
+    tematiche: gCbs('tematiche'),
+    tematiche_altro: gVal('tematiche_altro') || null,
+    organizzazione: gCbs('organizzazione'),
+    organizzazione_altro: gVal('organizzazione_altro') || null,
+    note: gVal('note') || null,
+  };
+}
+
+async function doSend() {
+  if (!validate()) return;
+  const btn = document.getElementById('btn-final');
+  btn.disabled = true; btn.textContent = 'Invio in corso…';
+  const { error } = await db.from(TABLE).insert([buildPayload()]);
+  if (error) {
+    console.error(error);
+    showToast('Errore nel salvataggio. Controlla la connessione e riprova.');
+    btn.disabled = false; btn.textContent = '➤ Invia scheda';
+  } else {
+    document.getElementById('form').style.display = 'none';
+    document.getElementById('ok').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4200);
+}
+</script>
+</body>
+</html>
