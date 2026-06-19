@@ -131,11 +131,11 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:220px;overflow:hidden;text-ove
         </select>
       </div>
       <div class="filter-group">
-        <label>Data evento dal</label>
+        <label>Data inserimento dal</label>
         <input type="date" id="f-da">
       </div>
       <div class="filter-group">
-        <label>Data evento al</label>
+        <label>Data inserimento al</label>
         <input type="date" id="f-a">
       </div>
       <div class="filter-group" id="fg-tipo">
@@ -192,7 +192,7 @@ const SCHEMAS = {
 
   etilometro: {
     table: 'etilometro_risposte',
-    dateField: 'data_evento',
+    dateField: 'data_caricamento',
     filterTipo: true,
     displayCols: [
       {k:'data_caricamento', l:'Data caric.'},
@@ -240,7 +240,7 @@ const SCHEMAS = {
 
   uscite: {
     table: 'scheda_uscite',
-    dateField: 'data_evento',
+    dateField: 'data_caricamento',
     filterTipo: false,
     displayCols: [
       {k:'data_caricamento', l:'Data caric.'},
@@ -291,7 +291,7 @@ const SCHEMAS = {
 
   osservativa: {
     table: 'scheda_osservativa',
-    dateField: 'data_evento',
+    dateField: 'data_caricamento',
     filterTipo: false,
     displayCols: [
       {k:'data_caricamento', l:'Data caric.'},
