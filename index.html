@@ -280,11 +280,19 @@
       <label class="opt"><input type="radio" name="trasporto_prima" value="guido_io"><span>Guido io (Auto/Moto)</span></label>
       <label class="opt"><input type="radio" name="trasporto_prima" value="bob"><span>BOB</span></label>
       <label class="opt"><input type="radio" name="trasporto_prima" value="bici"><span>Bici</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="monopattino"><span>Monopattino</span></label>
       <label class="opt"><input type="radio" name="trasporto_prima" value="mezzi_pubblici"><span>Mezzi pubblici</span></label>
       <label class="opt"><input type="radio" name="trasporto_prima" value="taxi"><span>Taxi</span></label>
       <label class="opt"><input type="radio" name="trasporto_prima" value="a_piedi"><span>A piedi</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="altro"><span>Altro</span></label>
     </div>
     <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard hidden" id="c-trasporto_prima_altro">
+    <p class="qlabel">Specificare Altro<span class="req">*</span></p>
+    <input type="text" id="trasporto_prima_altro" placeholder="Specifica…" oninput="sync()">
+    <p class="errmsg">Specifica per continuare</p>
   </div>
 
   <div class="qcard" id="c-valore_atteso_range">
@@ -325,11 +333,19 @@
       <label class="opt"><input type="radio" name="trasporto_dopo" value="guido_io"><span>Guido io (Auto/Moto)</span></label>
       <label class="opt"><input type="radio" name="trasporto_dopo" value="bob"><span>BOB</span></label>
       <label class="opt"><input type="radio" name="trasporto_dopo" value="bici"><span>Bici</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="monopattino"><span>Monopattino</span></label>
       <label class="opt"><input type="radio" name="trasporto_dopo" value="mezzi_pubblici"><span>Mezzi pubblici</span></label>
       <label class="opt"><input type="radio" name="trasporto_dopo" value="taxi"><span>Taxi</span></label>
       <label class="opt"><input type="radio" name="trasporto_dopo" value="a_piedi"><span>A piedi</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="altro"><span>Altro</span></label>
     </div>
     <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard hidden" id="c-trasporto_dopo_altro">
+    <p class="qlabel">Specificare Altro<span class="req">*</span></p>
+    <input type="text" id="trasporto_dopo_altro" placeholder="Specifica…" oninput="sync()">
+    <p class="errmsg">Specifica per continuare</p>
   </div>
 
   <!-- FORK -->
@@ -507,6 +523,12 @@ document.querySelectorAll('input[name=sostanze]').forEach(cb => {
 
 /* ---- Conditional reveal logic ---- */
 function handleConditionals(name) {
+  if (name === 'trasporto_prima') {
+    toggle('c-trasporto_prima_altro', gRad('trasporto_prima') === 'altro');
+  }
+  if (name === 'trasporto_dopo') {
+    toggle('c-trasporto_dopo_altro', gRad('trasporto_dopo') === 'altro');
+  }
   if (name === 'ha_mangiato') {
     toggle('c-ha_mangiato_da_quanto', gRad('ha_mangiato') !== 'no' && gRad('ha_mangiato') !== '');
   }
@@ -545,10 +567,12 @@ const validators = {
   patente: () => !!gRad('patente'),
   patente_ritirata: () => !!gRad('patente_ritirata'),
   trasporto_prima: () => !!gRad('trasporto_prima'),
+  trasporto_prima_altro: () => gRad('trasporto_prima') !== 'altro' || gVal('trasporto_prima_altro').length > 0,
   valore_atteso_range: () => !!gRad('valore_atteso_range'),
   valore_rilevato_preciso: () => gVal('valore_rilevato_preciso').length > 0,
   valore_rilevato_range: () => !!gRad('valore_rilevato_range'),
   trasporto_dopo: () => !!gRad('trasporto_dopo'),
+  trasporto_dopo_altro: () => gRad('trasporto_dopo') !== 'altro' || gVal('trasporto_dopo_altro').length > 0,
   stima_consumo: () => !!gRad('stima_consumo'),
   ha_mangiato: () => !!gRad('ha_mangiato'),
   ha_mangiato_da_quanto: () => gRad('ha_mangiato') === 'no' || !!gRad('ha_mangiato_da_quanto'),
@@ -557,8 +581,8 @@ const validators = {
 };
 
 const BASE_IDS = ['data_caricamento','asl','data_evento','luogo_tipo','luogo_nome','tempo_da_bere',
-  'genere','sesso','eta','patente','patente_ritirata','trasporto_prima',
-  'valore_atteso_range','valore_rilevato_preciso','valore_rilevato_range','trasporto_dopo'];
+  'genere','sesso','eta','patente','patente_ritirata','trasporto_prima','trasporto_prima_altro',
+  'valore_atteso_range','valore_rilevato_preciso','valore_rilevato_range','trasporto_dopo','trasporto_dopo_altro'];
 
 const DEEP_IDS = ['stima_consumo','ha_mangiato','ha_mangiato_da_quanto','sostanze','sostanze_altro'];
 
@@ -613,13 +637,13 @@ function buildPayload(tipo) {
     patente: gRad('patente'),
     patente_ritirata: gRad('patente_ritirata'),
     trasporto_prima: gRad('trasporto_prima'),
-    trasporto_prima_altro: null,
+    trasporto_prima_altro: gVal('trasporto_prima_altro') || null,
     valore_atteso_range: gRad('valore_atteso_range'),
     valore_atteso_preciso: null,
     valore_rilevato_range: gRad('valore_rilevato_range'),
     valore_rilevato_preciso: gVal('valore_rilevato_preciso') || null,
     trasporto_dopo: gRad('trasporto_dopo'),
-    trasporto_dopo_altro: null,
+    trasporto_dopo_altro: gVal('trasporto_dopo_altro') || null,
     tipo_risposta: tipo,
     stima_consumo: tipo === 'completa' ? Number(gRad('stima_consumo')) || null : null,
     bevute_birra: tipo === 'completa' ? drinkCounts.birra : null,
