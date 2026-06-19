@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Scheda Uscite – Rete Safe Night Piemonte</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#1a1a1a;min-height:100vh;padding:1.25rem 1rem 4rem;font-size:16px;line-height:1.4}
+.wrap{max-width:480px;margin:0 auto}
+
+.site-header{margin-bottom:1.75rem}
+.site-header h1{font-size:19px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px;line-height:1.3}
+.site-header p{font-size:13.5px;color:#666;line-height:1.55}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:5px 13px;border-radius:99px;margin-bottom:1rem}
+.pill-1{background:#dbeafe;color:#1d4ed8}
+.pill-2{background:#fef3c7;color:#92400e}
+.pill-3{background:#d1fae5;color:#065f46}
+.pill-4{background:#ede9fe;color:#6d28d9}
+.pill-5{background:#fce7f3;color:#9d174d}
+.pill-6{background:#fee2e2;color:#991b1b}
+
+.qcard{background:#fff;border:1.5px solid #e5e5e5;border-radius:14px;padding:1.1rem 1.1rem .95rem;margin-bottom:.75rem;transition:border-color .2s}
+.qcard.err{border-color:#ef4444}
+.qlabel{font-size:15.5px;font-weight:600;line-height:1.4;margin-bottom:3px}
+.req{color:#ef4444;margin-left:2px}
+.qhint{font-size:12.5px;color:#888;margin-bottom:11px}
+.errmsg{font-size:12.5px;color:#ef4444;margin-top:9px;display:none;font-weight:500}
+.qcard.err .errmsg{display:block}
+
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid #e5e5e5;border-radius:11px;cursor:pointer;transition:background .15s,border-color .15s;user-select:none;min-height:48px}
+.opt:active{background:#eee}
+.opt.sel{background:#eef2ff;border-color:#1a1a1a}
+.opt input{accent-color:#1a1a1a;width:20px;height:20px;flex-shrink:0;cursor:pointer}
+.opt span{font-size:15px;font-weight:500}
+
+select.big-select{width:100%;padding:14px;font-size:16px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:11px;background:#fafafa url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="9"><path d="M1 1l6 6 6-6" stroke="%23555" stroke-width="2" fill="none"/></svg>') no-repeat right 16px center;appearance:none;-webkit-appearance:none;min-height:50px}
+select.big-select:focus{border-color:#1a1a1a;outline:none}
+
+input[type=text],input[type=date]{width:100%;padding:13px 14px;font-size:16px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:11px;background:#fafafa;outline:none;transition:border-color .2s;min-height:48px}
+input[type=text]:focus,input[type=date]:focus{border-color:#1a1a1a;background:#fff}
+
+/* Number rows */
+.num-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0f0ee}
+.num-row:last-child{border-bottom:none}
+.num-label{font-size:14.5px;font-weight:500;flex:1;padding-right:12px}
+.num-input{width:80px;padding:8px 10px;font-size:15px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:9px;background:#fafafa;text-align:center;outline:none;-moz-appearance:textfield}
+.num-input::-webkit-outer-spin-button,.num-input::-webkit-inner-spin-button{-webkit-appearance:none}
+.num-input:focus{border-color:#1a1a1a;background:#fff}
+
+.divider{border:none;border-top:1px solid #e0e0e0;margin:1.6rem 0}
+
+.btn-final{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;font-size:15.5px;font-weight:700;font-family:inherit;background:#1a1a1a;color:#fff;border:none;border-radius:13px;cursor:pointer;margin-top:1.3rem;min-height:52px}
+.btn-final:active{opacity:.78}
+.btn-final:disabled{opacity:.5}
+
+#ok{display:none}
+.ok-wrap{text-align:center;padding:3.5rem 1rem}
+.ok-icon{font-size:46px;margin-bottom:1rem}
+.ok-title{font-size:20px;font-weight:700;margin-bottom:7px}
+.ok-sub{font-size:14px;color:#666;line-height:1.6;margin-bottom:1.4rem}
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;font-size:15px;font-weight:600;font-family:inherit;background:#1a1a1a;color:#fff;border:none;border-radius:12px;cursor:pointer;min-height:50px}
+
+#toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:#ef4444;color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:500;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;max-width:90vw;text-align:center;z-index:99}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.qcard{scroll-margin-top:18px}
+
+.warn{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:.9rem 1rem;font-size:12.5px;color:#991b1b;line-height:1.5;margin-bottom:1.1rem}
+.warn b{color:#7f1d1d}
+</style>
+</head>
+<body>
+<div class="wrap" id="form">
+
+  <header class="site-header">
+    <h1>Scheda Uscite<br>Rete Safe Night Piemonte</h1>
+    <p>Compila tutti i campi obbligatori. I campi numerici partono da 0.</p>
+  </header>
+
+  <!-- ===== SEZIONE 1: CONTATTI ===== -->
+  <span class="pill pill-1">● Contatti</span>
+
+  <div class="warn"><b>ATTENZIONE:</b> la data qui sotto è quella di caricamento della scheda da parte degli operatori, NON la data dell'evento.</div>
+
+  <div class="qcard" id="c-data_caricamento">
+    <p class="qlabel">Data di caricamento scheda<span class="req">*</span></p>
+    <input type="date" id="data_caricamento">
+    <p class="errmsg">Inserisci la data per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-asl">
+    <p class="qlabel">ASL<span class="req">*</span></p>
+    <select class="big-select" id="asl-select">
+      <option value="">Seleziona…</option>
+      <option>ASL AL</option><option>ASL AT</option><option>ASL BI</option>
+      <option>ASL CN1</option><option>ASL CN2</option><option>ASL NO</option>
+      <option>ASL Città di Torino</option><option>ASL TO3</option>
+      <option>ASL TO4</option><option>ASL TO5</option><option>ASL VC</option>
+      <option>ASL VCO</option><option>NEUTRAVEL</option>
+    </select>
+    <p class="errmsg">Seleziona l'ASL per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-data_evento">
+    <p class="qlabel">Data evento<span class="req">*</span></p>
+    <input type="date" id="data_evento">
+    <p class="errmsg">Inserisci la data dell'evento per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-luogo_tipo">
+    <p class="qlabel">Luogo<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="luogo_tipo" value="citta_metropolitana"><span>Città metropolitana</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="capoluogo"><span>Capoluogo di Provincia</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="citta_20mila"><span>Città (oltre 20mila abitanti)</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="paese"><span>Paese</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-luogo_nome">
+    <p class="qlabel">Specificare nome del luogo<span class="req">*</span></p>
+    <p class="qhint">Scrivere in MAIUSCOLO</p>
+    <input type="text" id="luogo_nome" placeholder="ES. TORINO" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
+    <p class="errmsg">Inserisci il nome del luogo per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-contatti">
+    <p class="qlabel">Contatti<span class="req">*</span></p>
+    <p class="qhint">Numero totale di persone contattate</p>
+    <input type="number" min="0" id="contatti" class="num-input" style="width:100%;text-align:left;padding:13px 14px" placeholder="0">
+    <p class="errmsg">Inserisci il numero di contatti</p>
+  </div>
+
+  <!-- ===== SEZIONE 2: EVENTO ===== -->
+  <hr class="divider">
+  <span class="pill pill-2">● Evento</span>
+
+  <div class="qcard" id="c-denominazione_evento">
+    <p class="qlabel">Denominazione evento<span class="req">*</span></p>
+    <p class="qhint">Scrivere in MAIUSCOLO</p>
+    <input type="text" id="denominazione_evento" placeholder="ES. FESTA DELLA BIRRA" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
+    <p class="errmsg">Inserisci la denominazione dell'evento</p>
+  </div>
+
+  <div class="qcard" id="c-tipologia_evento">
+    <p class="qlabel">Tipologia evento<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="tipologia_evento" value="concerto"><span>Concerto</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="festival"><span>Festival</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="sagra"><span>Sagra</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="festa_di_leva"><span>Festa di leva</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="movida"><span>Movida</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="locali"><span>Locali</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="club"><span>Club</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="street_parade"><span>Street Parade</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="eventi_informali_taz"><span>Eventi Informali/TAZ</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="altri_eventi"><span>Altri eventi</span></label>
+      <label class="opt"><input type="radio" name="tipologia_evento" value="formazioni"><span>Formazioni</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <!-- ===== SEZIONE 3: MATERIALI ===== -->
+  <hr class="divider">
+  <span class="pill pill-3">● Materiali</span>
+
+  <div class="qcard">
+    <p class="qlabel">Materiali distribuiti</p>
+    <p class="qhint">Inserisci le quantità (0 se non distribuito)</p>
+
+    <div class="num-row"><span class="num-label">Adesivi</span><input type="number" min="0" value="0" class="num-input" id="mat_adesivi"></div>
+    <div class="num-row"><span class="num-label">Alcol test monouso 0,0 g/l</span><input type="number" min="0" value="0" class="num-input" id="mat_alcol_test_00"></div>
+    <div class="num-row"><span class="num-label">Alcol test monouso 0,5 g/l</span><input type="number" min="0" value="0" class="num-input" id="mat_alcol_test_05"></div>
+    <div class="num-row"><span class="num-label">Alcol Pad</span><input type="number" min="0" value="0" class="num-input" id="mat_alcol_pad"></div>
+    <div class="num-row"><span class="num-label">Preservativi – Condom</span><input type="number" min="0" value="0" class="num-input" id="mat_preservativi_condom"></div>
+    <div class="num-row"><span class="num-label">Preservativi femminili</span><input type="number" min="0" value="0" class="num-input" id="mat_preservativi_femminili"></div>
+    <div class="num-row"><span class="num-label">Preservativi senza lattice</span><input type="number" min="0" value="0" class="num-input" id="mat_preservativi_senza_lattice"></div>
+    <div class="num-row"><span class="num-label">Lubrificante</span><input type="number" min="0" value="0" class="num-input" id="mat_lubrificante"></div>
+    <div class="num-row"><span class="num-label">Soluzioni saline</span><input type="number" min="0" value="0" class="num-input" id="mat_soluzioni_saline"></div>
+    <div class="num-row"><span class="num-label">Acqua distillata</span><input type="number" min="0" value="0" class="num-input" id="mat_acqua_distillata"></div>
+    <div class="num-row"><span class="num-label">Sali – Integratori</span><input type="number" min="0" value="0" class="num-input" id="mat_sali_integratori"></div>
+    <div class="num-row"><span class="num-label">Posaceneri</span><input type="number" min="0" value="0" class="num-input" id="mat_posaceneri"></div>
+    <div class="num-row"><span class="num-label">Portachiavi</span><input type="number" min="0" value="0" class="num-input" id="mat_portachiavi"></div>
+    <div class="num-row"><span class="num-label">Assorbenti</span><input type="number" min="0" value="0" class="num-input" id="mat_assorbenti"></div>
+    <div class="num-row"><span class="num-label">Filtri carbone attivo</span><input type="number" min="0" value="0" class="num-input" id="mat_filtri_carbone_attivo"></div>
+    <div class="num-row"><span class="num-label">Cannucce – Pippotti</span><input type="number" min="0" value="0" class="num-input" id="mat_cannucce_pippotti"></div>
+    <div class="num-row"><span class="num-label">Stagnole</span><input type="number" min="0" value="0" class="num-input" id="mat_stagnole"></div>
+    <div class="num-row"><span class="num-label">Pipe crack</span><input type="number" min="0" value="0" class="num-input" id="mat_pipe_crack"></div>
+    <div class="num-row"><span class="num-label">Siringhe 1ml</span><input type="number" min="0" value="0" class="num-input" id="mat_siringhe_1ml"></div>
+    <div class="num-row"><span class="num-label">Siringhe +</span><input type="number" min="0" value="0" class="num-input" id="mat_siringhe_plus"></div>
+    <div class="num-row"><span class="num-label">Narcan – Naloxone</span><input type="number" min="0" value="0" class="num-input" id="mat_narcan_naloxone"></div>
+    <div class="num-row"><span class="num-label">Tappi</span><input type="number" min="0" value="0" class="num-input" id="mat_tappi"></div>
+    <div class="num-row">
+      <span class="num-label">Altro</span>
+      <input type="text" id="mat_altro" placeholder="Specifica…" style="width:160px;padding:8px 10px;font-size:14px;min-height:unset">
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE 4: ALTRI MATERIALI ===== -->
+  <hr class="divider">
+  <span class="pill pill-4">● Altri materiali</span>
+
+  <div class="qcard">
+    <p class="qlabel">Materiali di conforto distribuiti</p>
+    <p class="qhint">Inserisci le quantità (0 se non distribuito)</p>
+
+    <div class="num-row"><span class="num-label">Acqua</span><input type="number" min="0" value="0" class="num-input" id="am_acqua"></div>
+    <div class="num-row"><span class="num-label">Succhi di frutta</span><input type="number" min="0" value="0" class="num-input" id="am_succhi_frutta"></div>
+    <div class="num-row"><span class="num-label">Caramelle</span><input type="number" min="0" value="0" class="num-input" id="am_caramelle"></div>
+    <div class="num-row"><span class="num-label">Chewing gum</span><input type="number" min="0" value="0" class="num-input" id="am_chewing_gum"></div>
+    <div class="num-row"><span class="num-label">Merendine / Snack</span><input type="number" min="0" value="0" class="num-input" id="am_merendine_snack"></div>
+    <div class="num-row">
+      <span class="num-label">Altro</span>
+      <input type="text" id="am_altro" placeholder="Specifica…" style="width:160px;padding:8px 10px;font-size:14px;min-height:unset">
+    </div>
+  </div>
+
+  <!-- ===== SEZIONE 5: VOLANTINI ===== -->
+  <hr class="divider">
+  <span class="pill pill-5">● Volantini</span>
+
+  <div class="qcard">
+    <p class="qlabel">Volantini distribuiti</p>
+    <p class="qhint">Inserisci le quantità (0 se non distribuito)</p>
+
+    <div class="num-row"><span class="num-label">Alcol</span><input type="number" min="0" value="0" class="num-input" id="vol_alcol"></div>
+    <div class="num-row"><span class="num-label">Allucinogeni</span><input type="number" min="0" value="0" class="num-input" id="vol_allucinogeni"></div>
+    <div class="num-row"><span class="num-label">Anfetamine</span><input type="number" min="0" value="0" class="num-input" id="vol_anfetamine"></div>
+    <div class="num-row"><span class="num-label">Cannabis</span><input type="number" min="0" value="0" class="num-input" id="vol_cannabis"></div>
+    <div class="num-row"><span class="num-label">Cocaina</span><input type="number" min="0" value="0" class="num-input" id="vol_cocaina"></div>
+    <div class="num-row"><span class="num-label">Crack</span><input type="number" min="0" value="0" class="num-input" id="vol_crack"></div>
+    <div class="num-row"><span class="num-label">MDMA</span><input type="number" min="0" value="0" class="num-input" id="vol_mdma"></div>
+    <div class="num-row"><span class="num-label">Eroina</span><input type="number" min="0" value="0" class="num-input" id="vol_eroina"></div>
+    <div class="num-row"><span class="num-label">Oppiacei</span><input type="number" min="0" value="0" class="num-input" id="vol_oppiacei"></div>
+    <div class="num-row"><span class="num-label">Inalanti</span><input type="number" min="0" value="0" class="num-input" id="vol_inalanti"></div>
+    <div class="num-row"><span class="num-label">Ketamina</span><input type="number" min="0" value="0" class="num-input" id="vol_ketamina"></div>
+    <div class="num-row"><span class="num-label">LSD</span><input type="number" min="0" value="0" class="num-input" id="vol_lsd"></div>
+    <div class="num-row"><span class="num-label">DMT</span><input type="number" min="0" value="0" class="num-input" id="vol_dmt"></div>
+    <div class="num-row"><span class="num-label">25XNBOME</span><input type="number" min="0" value="0" class="num-input" id="vol_25xnbome"></div>
+    <div class="num-row"><span class="num-label">2C-X</span><input type="number" min="0" value="0" class="num-input" id="vol_2cx"></div>
+    <div class="num-row"><span class="num-label">Mix</span><input type="number" min="0" value="0" class="num-input" id="vol_mix"></div>
+    <div class="num-row"><span class="num-label">Tabacco</span><input type="number" min="0" value="0" class="num-input" id="vol_tabacco"></div>
+    <div class="num-row"><span class="num-label">Chemsex</span><input type="number" min="0" value="0" class="num-input" id="vol_chemsex"></div>
+    <div class="num-row"><span class="num-label">Benzodiazepine</span><input type="number" min="0" value="0" class="num-input" id="vol_benzodiazepine"></div>
+    <div class="num-row"><span class="num-label">IST</span><input type="number" min="0" value="0" class="num-input" id="vol_ist"></div>
+    <div class="num-row"><span class="num-label">Generi sostanze violenza</span><input type="number" min="0" value="0" class="num-input" id="vol_generi_sostanze_violenza"></div>
+    <div class="num-row"><span class="num-label">Test antidroga</span><input type="number" min="0" value="0" class="num-input" id="vol_test_antidroga"></div>
+    <div class="num-row"><span class="num-label">Servizi ASL</span><input type="number" min="0" value="0" class="num-input" id="vol_servizi_asl"></div>
+    <div class="num-row"><span class="num-label">Galateo movida</span><input type="number" min="0" value="0" class="num-input" id="vol_galateo_movida"></div>
+    <div class="num-row"><span class="num-label">Chiedo per un amico</span><input type="number" min="0" value="0" class="num-input" id="vol_chiedo_per_un_amico"></div>
+    <div class="num-row"><span class="num-label">Flyer lingua inglese</span><input type="number" min="0" value="0" class="num-input" id="vol_flyer_lingua_inglese"></div>
+    <div class="num-row"><span class="num-label">Consenso</span><input type="number" min="0" value="0" class="num-input" id="vol_consenso"></div>
+  </div>
+
+  <!-- ===== SEZIONE 6: QUESTIONARI ===== -->
+  <hr class="divider">
+  <span class="pill pill-6">● Questionari</span>
+
+  <div class="qcard">
+    <p class="qlabel">Questionari compilati durante l'intervento</p>
+    <p class="qhint">Inserisci le quantità (0 se nessuno)</p>
+
+    <div class="num-row"><span class="num-label">Questionario Etilometro</span><input type="number" min="0" value="0" class="num-input" id="q_etilometro"></div>
+    <div class="num-row"><span class="num-label">Questionario Sostanze</span><input type="number" min="0" value="0" class="num-input" id="q_sostanze"></div>
+  </div>
+
+  <div class="qcard">
+    <p class="qlabel">Note e osservazioni</p>
+    <textarea id="note" rows="4" style="width:100%;padding:13px 14px;font-size:15px;font-family:inherit;border:1.5px solid #e5e5e5;border-radius:11px;background:#fafafa;outline:none;resize:vertical" placeholder="Inserisci eventuali note…"></textarea>
+  </div>
+
+  <button class="btn-final" id="btn-final" onclick="doSend()">➤ Invia scheda</button>
+
+</div>
+
+<!-- Success -->
+<div id="ok">
+  <div class="ok-wrap">
+    <div class="ok-icon">✓</div>
+    <p class="ok-title">Scheda inviata!</p>
+    <p class="ok-sub">I dati sono stati salvati correttamente.</p>
+    <button class="btn-primary" style="margin-top:1.5rem" onclick="location.reload()">+ Nuova scheda</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE SUPABASE
+============================================================ */
+const SUPABASE_URL = 'https://zotrurzfsaerabpqgjiq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdHJ1cnpmc2FlcmFicHFnamlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2ODAzOTcsImV4cCI6MjA4OTI1NjM5N30.V1cfWx_L5YoKnCduz-B-ecb_jzCmqh3X4NLr6YVt7h4';
+const TABLE = 'scheda_uscite';
+/* ============================================================ */
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+document.getElementById('data_caricamento').value = new Date().toISOString().slice(0,10);
+
+/* Radio styling */
+document.querySelectorAll('input[type=radio]').forEach(i => {
+  i.addEventListener('change', () => {
+    document.querySelectorAll(`[name="${i.name}"]`).forEach(r => r.closest('.opt').classList.remove('sel'));
+    i.closest('.opt').classList.add('sel');
+  });
+});
+
+/* Helpers */
+function gVal(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function gRad(n) { const r = document.querySelector(`input[name="${n}"]:checked`); return r ? r.value : ''; }
+function gNum(id) { const v = parseInt(document.getElementById(id)?.value) || 0; return v; }
+
+/* Validation */
+const REQUIRED = ['data_caricamento','asl','data_evento','luogo_tipo','luogo_nome','contatti','denominazione_evento','tipologia_evento'];
+
+function validate() {
+  let ok = true, firstBad = null;
+  const checks = {
+    data_caricamento: () => !!gVal('data_caricamento'),
+    asl: () => !!gVal('asl-select'),
+    data_evento: () => !!gVal('data_evento'),
+    luogo_tipo: () => !!gRad('luogo_tipo'),
+    luogo_nome: () => gVal('luogo_nome').length > 0,
+    contatti: () => gVal('contatti') !== '' && parseInt(gVal('contatti')) >= 0,
+    denominazione_evento: () => gVal('denominazione_evento').length > 0,
+    tipologia_evento: () => !!gRad('tipologia_evento'),
+  };
+  Object.entries(checks).forEach(([id, fn]) => {
+    const card = document.getElementById('c-' + id);
+    if (!card) return;
+    const v = fn();
+    card.classList.toggle('err', !v);
+    if (!v && ok) { ok = false; firstBad = id; }
+  });
+  if (!ok && firstBad) document.getElementById('c-' + firstBad)?.scrollIntoView({ behavior:'smooth', block:'center' });
+  return ok;
+}
+
+/* Build payload */
+function buildPayload() {
+  return {
+    data_caricamento: gVal('data_caricamento'),
+    asl: gVal('asl-select'),
+    data_evento: gVal('data_evento'),
+    luogo_tipo: gRad('luogo_tipo'),
+    luogo_nome: gVal('luogo_nome'),
+    contatti: parseInt(gVal('contatti')) || 0,
+    denominazione_evento: gVal('denominazione_evento'),
+    tipologia_evento: gRad('tipologia_evento'),
+    mat_adesivi: gNum('mat_adesivi'),
+    mat_alcol_test_00: gNum('mat_alcol_test_00'),
+    mat_alcol_test_05: gNum('mat_alcol_test_05'),
+    mat_alcol_pad: gNum('mat_alcol_pad'),
+    mat_preservativi_condom: gNum('mat_preservativi_condom'),
+    mat_preservativi_femminili: gNum('mat_preservativi_femminili'),
+    mat_preservativi_senza_lattice: gNum('mat_preservativi_senza_lattice'),
+    mat_lubrificante: gNum('mat_lubrificante'),
+    mat_soluzioni_saline: gNum('mat_soluzioni_saline'),
+    mat_acqua_distillata: gNum('mat_acqua_distillata'),
+    mat_sali_integratori: gNum('mat_sali_integratori'),
+    mat_posaceneri: gNum('mat_posaceneri'),
+    mat_portachiavi: gNum('mat_portachiavi'),
+    mat_assorbenti: gNum('mat_assorbenti'),
+    mat_filtri_carbone_attivo: gNum('mat_filtri_carbone_attivo'),
+    mat_cannucce_pippotti: gNum('mat_cannucce_pippotti'),
+    mat_stagnole: gNum('mat_stagnole'),
+    mat_pipe_crack: gNum('mat_pipe_crack'),
+    mat_siringhe_1ml: gNum('mat_siringhe_1ml'),
+    mat_siringhe_plus: gNum('mat_siringhe_plus'),
+    mat_narcan_naloxone: gNum('mat_narcan_naloxone'),
+    mat_tappi: gNum('mat_tappi'),
+    mat_altro: gVal('mat_altro') || null,
+    am_acqua: gNum('am_acqua'),
+    am_succhi_frutta: gNum('am_succhi_frutta'),
+    am_caramelle: gNum('am_caramelle'),
+    am_chewing_gum: gNum('am_chewing_gum'),
+    am_merendine_snack: gNum('am_merendine_snack'),
+    am_altro: gVal('am_altro') || null,
+    vol_alcol: gNum('vol_alcol'),
+    vol_allucinogeni: gNum('vol_allucinogeni'),
+    vol_anfetamine: gNum('vol_anfetamine'),
+    vol_cannabis: gNum('vol_cannabis'),
+    vol_cocaina: gNum('vol_cocaina'),
+    vol_crack: gNum('vol_crack'),
+    vol_mdma: gNum('vol_mdma'),
+    vol_eroina: gNum('vol_eroina'),
+    vol_oppiacei: gNum('vol_oppiacei'),
+    vol_inalanti: gNum('vol_inalanti'),
+    vol_ketamina: gNum('vol_ketamina'),
+    vol_lsd: gNum('vol_lsd'),
+    vol_dmt: gNum('vol_dmt'),
+    vol_25xnbome: gNum('vol_25xnbome'),
+    vol_2cx: gNum('vol_2cx'),
+    vol_mix: gNum('vol_mix'),
+    vol_tabacco: gNum('vol_tabacco'),
+    vol_chemsex: gNum('vol_chemsex'),
+    vol_benzodiazepine: gNum('vol_benzodiazepine'),
+    vol_ist: gNum('vol_ist'),
+    vol_generi_sostanze_violenza: gNum('vol_generi_sostanze_violenza'),
+    vol_test_antidroga: gNum('vol_test_antidroga'),
+    vol_servizi_asl: gNum('vol_servizi_asl'),
+    vol_galateo_movida: gNum('vol_galateo_movida'),
+    vol_chiedo_per_un_amico: gNum('vol_chiedo_per_un_amico'),
+    vol_flyer_lingua_inglese: gNum('vol_flyer_lingua_inglese'),
+    vol_consenso: gNum('vol_consenso'),
+    q_etilometro: gNum('q_etilometro'),
+    q_sostanze: gNum('q_sostanze'),
+    note: gVal('note') || null,
+  };
+}
+
+async function doSend() {
+  if (!validate()) return;
+  const btn = document.getElementById('btn-final');
+  btn.disabled = true; btn.textContent = 'Invio in corso…';
+  const { error } = await db.from(TABLE).insert([buildPayload()]);
+  if (error) {
+    console.error(error);
+    showToast('Errore nel salvataggio. Controlla la connessione e riprova.');
+    btn.disabled = false; btn.textContent = '➤ Invia scheda';
+  } else {
+    document.getElementById('form').style.display = 'none';
+    document.getElementById('ok').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4200);
+}
+
+document.getElementById('asl-select').addEventListener('change', () => {});
+document.getElementById('data_evento').addEventListener('change', () => {});
+</script>
+</body>
+</html>
