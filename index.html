@@ -310,7 +310,7 @@
   <div class="qcard" id="c-valore_rilevato_preciso">
     <p class="qlabel">Valore preciso rilevato<span class="req">*</span></p>
     <p class="qhint">Solo cifre e virgola — es. 0,23 oppure 1,50</p>
-    <input type="text" id="valore_rilevato_preciso" placeholder="0,00" inputmode="decimal" oninput="sanitizeValore(this)" autocomplete="off">
+    <input type="text" id="valore_rilevato_preciso" placeholder="0,00" inputmode="decimal" oninput="sanitizeValore(this)" onblur="blurValore(this)" autocomplete="off">
     <p class="errmsg">Inserisci un valore valido (es. 0,23)</p>
   </div>
 
@@ -549,6 +549,12 @@ function stepDrink(type, delta) {
 }
 
 /* ---- Helpers ---- */
+function blurValore(el) {
+  const card = document.getElementById('c-valore_rilevato_preciso');
+  const valid = /^\d+,\d{1,2}$/.test(el.value);
+  card.classList.toggle('err', !valid);
+}
+
 function sanitizeValore(el) {
   let v = el.value;
   v = v.replace(/[^\d,]/g, '');           // solo cifre e virgola
