@@ -550,12 +550,7 @@ function stepDrink(type, delta) {
 
 /* ---- Helpers ---- */
 function sanitizeValore(el) {
-  let v = el.value;
-  v = v.replace(/[^\d,]/g, '');           // solo cifre e virgola
-  const parts = v.split(',');
-  if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join(''); // una sola virgola
-  if (parts.length === 2) v = parts[0] + ',' + parts[1].slice(0, 2);  // max 2 decimali
-  el.value = v;
+  const v = el.value;
   const card = document.getElementById('c-valore_rilevato_preciso');
   const valid = /^\d+,\d{1,2}$/.test(v);
   card.classList.toggle('err', v.length > 0 && !valid);
