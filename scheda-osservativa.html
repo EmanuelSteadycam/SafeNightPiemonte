@@ -482,15 +482,15 @@ document.querySelectorAll('input[type=checkbox]').forEach(i => {
 });
 
 /* Ora validation (same approach as etilometro valore) */
+const ORA_RE = /^([01]?\d|2[0-3]),([0-5]\d)$/;
 function sanitizeOra(el, cardId) {
   const v = el.value;
   const card = document.getElementById(cardId);
-  const valid = /^\d{1,2},\d{2}$/.test(v);
-  card.classList.toggle('err', v.length > 0 && !valid);
+  card.classList.toggle('err', v.length > 0 && !ORA_RE.test(v));
 }
 function blurOra(el, cardId) {
   const card = document.getElementById(cardId);
-  card.classList.toggle('err', !/^\d{1,2},\d{2}$/.test(el.value));
+  card.classList.toggle('err', !ORA_RE.test(el.value));
 }
 
 /* Show/hide "altro" sub-fields */
@@ -529,8 +529,8 @@ function validate() {
     luogo_tipo: () => !!gRad('luogo_tipo'),
     luogo_nome: () => gVal('luogo_nome').length > 0,
     denominazione_evento: () => gVal('denominazione_evento').length > 0,
-    ora_inizio: () => /^\d{1,2},\d{2}$/.test(gVal('ora_inizio')),
-    ora_fine: () => /^\d{1,2},\d{2}$/.test(gVal('ora_fine')),
+    ora_inizio: () => ORA_RE.test(gVal('ora_inizio')),
+    ora_fine: () => ORA_RE.test(gVal('ora_fine')),
     variazioni_orario: () => !!gRad('variazioni_orario'),
   };
   Object.entries(checks).forEach(([id, fn]) => {
