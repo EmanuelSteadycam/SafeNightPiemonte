@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin – Etilometro Safe Night Piemonte</title>
+<title>Admin – Safe Night Piemonte</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -31,7 +31,13 @@ header{background:#1a1a1a;color:#fff;padding:.9rem 1.5rem;display:flex;align-ite
 .btn-logout{font-size:13px;font-weight:600;font-family:inherit;background:transparent;color:#fff;border:1.5px solid #444;border-radius:8px;padding:6px 14px;cursor:pointer}
 .btn-logout:hover{border-color:#888}
 
-main{flex:1;padding:1.25rem 1.5rem;max-width:1600px;width:100%;margin:0 auto}
+main{flex:1;padding:1.25rem 1.5rem;max-width:1800px;width:100%;margin:0 auto}
+
+/* ---- SCHEDA TABS ---- */
+.scheda-tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.tab-btn{padding:8px 18px;font-size:14px;font-weight:600;font-family:inherit;background:#fff;color:#666;border:1.5px solid #e5e5e5;border-radius:9px;cursor:pointer;transition:all .15s}
+.tab-btn:hover{border-color:#aaa;color:#1a1a1a}
+.tab-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
 
 /* ---- FILTERS ---- */
 .filters-card{background:#fff;border:1.5px solid #e5e5e5;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-end}
@@ -60,7 +66,7 @@ thead th{position:sticky;top:0;background:#f7f7f5;padding:10px 13px;text-align:l
 tbody tr{border-bottom:1px solid #f0f0ee;transition:background .1s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:#fafafa}
-tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+tbody td{padding:9px 13px;color:#1a1a1a;max-width:220px;overflow:hidden;text-overflow:ellipsis}
 .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600}
 .badge-base{background:#dbeafe;color:#1d4ed8}
 .badge-completa{background:#d1fae5;color:#065f46}
@@ -73,7 +79,6 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
 .btn-page:disabled{opacity:.35;cursor:default}
 .btn-page:not(:disabled):active{background:#f0f0ee}
 
-/* ---- LOADING ---- */
 .loading{text-align:center;padding:3rem;color:#888;font-size:14px}
 </style>
 </head>
@@ -84,7 +89,7 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
   <div class="login-box">
     <p class="login-logo">Rete Safe Night Piemonte</p>
     <h1>Pannello Admin</h1>
-    <p>Accedi con le tue credenziali per visualizzare le schede etilometro.</p>
+    <p>Accedi con le tue credenziali per visualizzare le schede.</p>
     <form onsubmit="doLogin(event)">
       <input type="email" id="email" placeholder="Email" autocomplete="username" required>
       <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
@@ -97,7 +102,7 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
 <!-- ===== ADMIN PANEL ===== -->
 <div id="admin-panel">
   <header>
-    <span class="header-title">Etilometro — Admin</span>
+    <span class="header-title">Safe Night Piemonte — Admin</span>
     <div class="header-right">
       <span class="header-user" id="user-email"></span>
       <button class="btn-logout" onclick="doLogout()">Esci</button>
@@ -105,6 +110,13 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
   </header>
 
   <main>
+    <!-- Scheda tabs -->
+    <div class="scheda-tabs">
+      <button class="tab-btn active" onclick="switchScheda('etilometro')">Etilometro</button>
+      <button class="tab-btn" onclick="switchScheda('uscite')">Scheda Uscite</button>
+      <button class="tab-btn" onclick="switchScheda('osservativa')">Scheda Osservativa</button>
+    </div>
+
     <!-- Filters -->
     <div class="filters-card">
       <div class="filter-group">
@@ -126,7 +138,7 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
         <label>Data evento al</label>
         <input type="date" id="f-a">
       </div>
-      <div class="filter-group">
+      <div class="filter-group" id="fg-tipo">
         <label>Tipo risposta</label>
         <select id="f-tipo">
           <option value="">Tutti i tipi</option>
@@ -149,35 +161,9 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
     <!-- Table -->
     <div class="table-wrap">
       <table>
-        <thead>
-          <tr>
-            <th>Data caric.</th>
-            <th>ASL</th>
-            <th>Data evento</th>
-            <th>Luogo tipo</th>
-            <th>Luogo nome</th>
-            <th>Tempo da bere</th>
-            <th>Genere</th>
-            <th>Sesso ass.</th>
-            <th>Età</th>
-            <th>Patente</th>
-            <th>Pat. ritirata</th>
-            <th>Trasp. prima</th>
-            <th>V. atteso</th>
-            <th>V. rilevato</th>
-            <th>Trasp. dopo</th>
-            <th>Tipo</th>
-            <th>Stima</th>
-            <th>Birra</th>
-            <th>Vino</th>
-            <th>Shot</th>
-            <th>Aper.</th>
-            <th>Mangiato</th>
-            <th>Sostanze</th>
-          </tr>
-        </thead>
+        <thead id="table-head"><tr></tr></thead>
         <tbody id="table-body">
-          <tr><td colspan="23" class="loading">Caricamento…</td></tr>
+          <tr><td class="loading">Caricamento…</td></tr>
         </tbody>
       </table>
     </div>
@@ -193,21 +179,173 @@ tbody td{padding:9px 13px;color:#1a1a1a;max-width:200px;overflow:hidden;text-ove
 
 <script>
 /* ============================================================
-   CONFIGURAZIONE SUPABASE
+   SUPABASE
 ============================================================ */
 const SUPABASE_URL = 'https://zotrurzfsaerabpqgjiq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdHJ1cnpmc2FlcmFicHFnamlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2ODAzOTcsImV4cCI6MjA4OTI1NjM5N30.V1cfWx_L5YoKnCduz-B-ecb_jzCmqh3X4NLr6YVt7h4';
-const TABLE = 'etilometro_risposte';
-/* ============================================================ */
-
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* ============================================================
+   SCHEMI TABELLE
+============================================================ */
+const SCHEMAS = {
+
+  etilometro: {
+    table: 'etilometro_risposte',
+    dateField: 'data_evento',
+    filterTipo: true,
+    displayCols: [
+      {k:'data_caricamento', l:'Data caric.'},
+      {k:'asl', l:'ASL'},
+      {k:'data_evento', l:'Data evento'},
+      {k:'luogo_tipo', l:'Luogo tipo'},
+      {k:'luogo_nome', l:'Luogo nome'},
+      {k:'tempo_da_bere', l:'Tempo da bere'},
+      {k:'genere', l:'Genere'},
+      {k:'sesso_assegnato', l:'Sesso ass.'},
+      {k:'eta', l:'Età'},
+      {k:'patente', l:'Patente'},
+      {k:'patente_ritirata', l:'Pat. ritirata'},
+      {k:'trasporto_prima', l:'Trasp. prima'},
+      {k:'valore_atteso_range', l:'V. atteso'},
+      {k:'valore_rilevato_preciso', l:'V. rilevato'},
+      {k:'trasporto_dopo', l:'Trasp. dopo'},
+      {k:'tipo_risposta', l:'Tipo', badge:true},
+      {k:'stima_consumo', l:'Stima'},
+      {k:'bevute_birra', l:'Birra'},
+      {k:'bevute_vino', l:'Vino'},
+      {k:'bevute_shot', l:'Shot'},
+      {k:'bevute_aperitivo', l:'Aper.'},
+      {k:'ha_mangiato', l:'Mangiato'},
+      {k:'sostanze', l:'Sostanze'},
+    ],
+    csvCols: [
+      ['id','ID'],['creato_il','Creato il'],['data_caricamento','Data caricamento'],
+      ['asl','ASL'],['data_evento','Data evento'],['luogo_tipo','Luogo tipo'],
+      ['luogo_nome','Luogo nome'],['tempo_da_bere','Tempo da bere'],['genere','Genere'],
+      ['sesso_assegnato','Sesso assegnato'],['eta','Età'],['patente','Patente'],
+      ['patente_ritirata','Patente ritirata'],['trasporto_prima','Trasporto prima'],
+      ['trasporto_prima_altro','Trasporto prima (altro)'],
+      ['valore_atteso_range','Valore atteso range'],
+      ['valore_rilevato_range','Valore rilevato range'],
+      ['valore_rilevato_preciso','Valore rilevato preciso'],
+      ['trasporto_dopo','Trasporto dopo'],['trasporto_dopo_altro','Trasporto dopo (altro)'],
+      ['tipo_risposta','Tipo risposta'],['stima_consumo','Stima consumo'],
+      ['bevute_birra','Birra (bicchieri)'],['bevute_vino','Vino (bicchieri)'],
+      ['bevute_shot','Shot'],['bevute_aperitivo','Aperitivi/Cocktail'],
+      ['ha_mangiato','Ha mangiato'],['ha_mangiato_da_quanto','Mangiato da quanto'],
+      ['sostanze','Sostanze'],['sostanze_altro','Sostanze (altro)'],
+    ],
+  },
+
+  uscite: {
+    table: 'scheda_uscite',
+    dateField: 'data_evento',
+    filterTipo: false,
+    displayCols: [
+      {k:'data_caricamento', l:'Data caric.'},
+      {k:'asl', l:'ASL'},
+      {k:'data_evento', l:'Data evento'},
+      {k:'luogo_nome', l:'Luogo'},
+      {k:'denominazione_evento', l:'Evento'},
+      {k:'tipologia_evento', l:'Tipologia'},
+      {k:'contatti', l:'Contatti'},
+      {k:'q_etilometro', l:'Q. Etilometro'},
+      {k:'q_sostanze', l:'Q. Sostanze'},
+      {k:'note', l:'Note'},
+    ],
+    csvCols: [
+      ['id','ID'],['creato_il','Creato il'],['data_caricamento','Data caricamento'],
+      ['asl','ASL'],['data_evento','Data evento'],['luogo_tipo','Luogo tipo'],
+      ['luogo_nome','Luogo nome'],['contatti','Contatti'],
+      ['denominazione_evento','Denominazione evento'],['tipologia_evento','Tipologia evento'],
+      ['mat_adesivi','Adesivi'],['mat_alcol_test_00','Alcol test 0,0 g/l'],
+      ['mat_alcol_test_05','Alcol test 0,5 g/l'],['mat_alcol_pad','Alcol Pad'],
+      ['mat_preservativi_condom','Preservativi condom'],['mat_preservativi_femminili','Preservativi femminili'],
+      ['mat_preservativi_senza_lattice','Preservativi senza lattice'],['mat_lubrificante','Lubrificante'],
+      ['mat_soluzioni_saline','Soluzioni saline'],['mat_acqua_distillata','Acqua distillata'],
+      ['mat_sali_integratori','Sali/Integratori'],['mat_posaceneri','Posaceneri'],
+      ['mat_portachiavi','Portachiavi'],['mat_assorbenti','Assorbenti'],
+      ['mat_filtri_carbone_attivo','Filtri carbone attivo'],['mat_cannucce_pippotti','Cannucce/Pippotti'],
+      ['mat_stagnole','Stagnole'],['mat_pipe_crack','Pipe crack'],
+      ['mat_siringhe_1ml','Siringhe 1ml'],['mat_siringhe_plus','Siringhe +'],
+      ['mat_narcan_naloxone','Narcan/Naloxone'],['mat_tappi','Tappi'],['mat_altro','Materiali altro'],
+      ['am_acqua','AM Acqua'],['am_succhi_frutta','AM Succhi di frutta'],
+      ['am_caramelle','AM Caramelle'],['am_chewing_gum','AM Chewing gum'],
+      ['am_merendine_snack','AM Merendine/Snack'],['am_altro','AM Altro'],
+      ['vol_alcol','Vol. Alcol'],['vol_allucinogeni','Vol. Allucinogeni'],
+      ['vol_anfetamine','Vol. Anfetamine'],['vol_cannabis','Vol. Cannabis'],
+      ['vol_cocaina','Vol. Cocaina'],['vol_crack','Vol. Crack'],['vol_mdma','Vol. MDMA'],
+      ['vol_eroina','Vol. Eroina'],['vol_oppiacei','Vol. Oppiacei'],
+      ['vol_inalanti','Vol. Inalanti'],['vol_ketamina','Vol. Ketamina'],
+      ['vol_lsd','Vol. LSD'],['vol_dmt','Vol. DMT'],['vol_25xnbome','Vol. 25XNBOME'],
+      ['vol_2cx','Vol. 2C-X'],['vol_mix','Vol. Mix'],['vol_tabacco','Vol. Tabacco'],
+      ['vol_chemsex','Vol. Chemsex'],['vol_benzodiazepine','Vol. Benzodiazepine'],
+      ['vol_ist','Vol. IST'],['vol_generi_sostanze_violenza','Vol. Generi sostanze violenza'],
+      ['vol_test_antidroga','Vol. Test antidroga'],['vol_servizi_asl','Vol. Servizi ASL'],
+      ['vol_galateo_movida','Vol. Galateo movida'],['vol_chiedo_per_un_amico','Vol. Chiedo per un amico'],
+      ['vol_flyer_lingua_inglese','Vol. Flyer inglese'],['vol_consenso','Vol. Consenso'],
+      ['q_etilometro','Q. Etilometro'],['q_sostanze','Q. Sostanze'],['note','Note'],
+    ],
+  },
+
+  osservativa: {
+    table: 'scheda_osservativa',
+    dateField: 'data_evento',
+    filterTipo: false,
+    displayCols: [
+      {k:'data_caricamento', l:'Data caric.'},
+      {k:'asl', l:'ASL'},
+      {k:'data_evento', l:'Data evento'},
+      {k:'luogo_nome', l:'Luogo'},
+      {k:'denominazione_evento', l:'Evento'},
+      {k:'ora_inizio', l:'Ora inizio'},
+      {k:'ora_fine', l:'Ora fine'},
+      {k:'variazioni_orario', l:'Variazione orario'},
+      {k:'eta', l:'Età (fasce)'},
+      {k:'pratiche', l:'Pratiche'},
+      {k:'rischi', l:'Rischi'},
+      {k:'note', l:'Note'},
+    ],
+    csvCols: [
+      ['id','ID'],['creato_il','Creato il'],['data_caricamento','Data caricamento'],
+      ['asl','ASL'],['data_evento','Data evento'],['luogo_tipo','Luogo tipo'],
+      ['luogo_nome','Luogo nome'],['denominazione_evento','Denominazione evento'],
+      ['ora_inizio','Ora inizio'],['ora_fine','Ora fine'],
+      ['variazioni_orario','Variazioni orario'],['variazioni_orario_altro','Variazioni orario (altro)'],
+      ['eta','Età'],['prevalenza_genere','Prevalenza genere'],
+      ['prevalenza_genere_altro','Prevalenza genere (altro)'],
+      ['stile','Stile'],['stile_altro','Stile (altro)'],
+      ['altri_soggetti','Altri soggetti'],['altri_soggetti_enti','Altri soggetti – enti'],
+      ['altri_soggetti_altro','Altri soggetti (altro)'],
+      ['interventi','Interventi'],['interventi_altro','Interventi (altro)'],
+      ['rischi','Rischi'],['rischi_altro','Rischi (altro)'],
+      ['gruppi_caratteristiche','Gruppi – caratteristiche'],
+      ['gruppi_numero_componenti','Gruppi – numero componenti'],
+      ['gruppi_prevalenza_genere','Gruppi – prevalenza genere'],
+      ['gruppi_prevalenza_genere_altro','Gruppi – prevalenza genere (altro)'],
+      ['pratiche','Pratiche'],['pratiche_altro','Pratiche (altro)'],
+      ['fruizione_spazi','Fruizione spazi'],['fruizione_spazi_altro','Fruizione spazi (altro)'],
+      ['tematiche','Tematiche'],['tematiche_altro','Tematiche (altro)'],
+      ['organizzazione','Organizzazione'],['organizzazione_altro','Organizzazione (altro)'],
+      ['note','Note'],
+    ],
+  },
+
+};
+
+/* ============================================================
+   STATE
+============================================================ */
 const PAGE_SIZE = 100;
 let currentPage = 0;
-let totalCount = 0;
+let totalCount  = 0;
+let activeScheda = 'etilometro';
 
-/* ---- Auth ---- */
-db.auth.onAuthStateChange((_event, session) => {
+/* ============================================================
+   AUTH
+============================================================ */
+db.auth.onAuthStateChange((_e, session) => {
   if (session) {
     document.getElementById('user-email').textContent = session.user.email;
     document.getElementById('login-screen').style.display = 'none';
@@ -233,11 +371,24 @@ async function doLogin(e) {
   }
 }
 
-async function doLogout() {
-  await db.auth.signOut();
+async function doLogout() { await db.auth.signOut(); }
+
+/* ============================================================
+   SCHEDA SWITCH
+============================================================ */
+function switchScheda(key) {
+  activeScheda = key;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', Object.keys(SCHEMAS)[i] === key);
+  });
+  const schema = SCHEMAS[key];
+  document.getElementById('fg-tipo').style.display = schema.filterTipo ? '' : 'none';
+  resetFilters();
 }
 
-/* ---- Filters ---- */
+/* ============================================================
+   FILTERS
+============================================================ */
 function getFilters() {
   return {
     asl:  document.getElementById('f-asl').value,
@@ -247,11 +398,13 @@ function getFilters() {
   };
 }
 
-function applyQuery(q, f) {
+function buildQuery(f, selectStr) {
+  const schema = SCHEMAS[activeScheda];
+  let q = db.from(schema.table).select(selectStr, { count: 'exact' });
   if (f.asl)  q = q.eq('asl', f.asl);
-  if (f.da)   q = q.gte('data_evento', f.da);
-  if (f.a)    q = q.lte('data_evento', f.a);
-  if (f.tipo) q = q.eq('tipo_risposta', f.tipo);
+  if (f.da)   q = q.gte(schema.dateField, f.da);
+  if (f.a)    q = q.lte(schema.dateField, f.a);
+  if (schema.filterTipo && f.tipo) q = q.eq('tipo_risposta', f.tipo);
   return q;
 }
 
@@ -263,92 +416,80 @@ function resetFilters() {
 function prevPage() { if (currentPage > 0) { currentPage--; loadData(); } }
 function nextPage() { if ((currentPage + 1) * PAGE_SIZE < totalCount) { currentPage++; loadData(); } }
 
-/* ---- Load data ---- */
+/* ============================================================
+   LOAD DATA
+============================================================ */
 async function loadData() {
+  const schema = SCHEMAS[activeScheda];
+  const ncols = schema.displayCols.length;
+
   document.getElementById('count-label').textContent = 'Caricamento…';
-  document.getElementById('table-body').innerHTML = '<tr><td colspan="23" class="loading">Caricamento…</td></tr>';
+  document.getElementById('table-body').innerHTML =
+    `<tr><td colspan="${ncols}" class="loading">Caricamento…</td></tr>`;
+
+  renderHeader(schema);
 
   const f = getFilters();
-  let q = db.from(TABLE)
-    .select('*', { count: 'exact' })
+  const q = buildQuery(f, '*')
     .order('creato_il', { ascending: false })
     .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
-  q = applyQuery(q, f);
 
   const { data, count, error } = await q;
   if (error) {
     document.getElementById('count-label').textContent = 'Errore nel caricamento.';
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="23" class="loading">Errore: ' + error.message + '</td></tr>';
+    document.getElementById('table-body').innerHTML =
+      `<tr><td colspan="${ncols}" class="loading">Errore: ${error.message}</td></tr>`;
     return;
   }
 
   totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  document.getElementById('count-label').innerHTML = '<span>' + totalCount + '</span> schede trovate';
-  document.getElementById('page-label').textContent = 'Pagina ' + (currentPage + 1) + ' di ' + totalPages;
+  document.getElementById('count-label').innerHTML = `<span>${totalCount}</span> schede trovate`;
+  document.getElementById('page-label').textContent = `Pagina ${currentPage + 1} di ${totalPages}`;
   document.getElementById('btn-prev').disabled = currentPage === 0;
   document.getElementById('btn-next').disabled = (currentPage + 1) * PAGE_SIZE >= totalCount;
 
-  renderTable(data || []);
+  renderTable(data || [], schema);
 }
 
-/* ---- Render ---- */
-function cell(v) {
+/* ============================================================
+   RENDER
+============================================================ */
+function renderHeader(schema) {
+  document.getElementById('table-head').innerHTML =
+    '<tr>' + schema.displayCols.map(c => `<th>${c.l}</th>`).join('') + '</tr>';
+}
+
+function cellVal(v, col) {
   if (v === null || v === undefined || v === '') return '<td style="color:#ccc">—</td>';
-  if (Array.isArray(v)) v = v.join(', ');
-  return '<td title="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</td>';
+  if (Array.isArray(v)) {
+    const joined = v.join(', ');
+    return `<td title="${esc(joined)}">${esc(joined)}</td>`;
+  }
+  if (col && col.badge) {
+    return `<td><span class="badge badge-${v}">${v}</span></td>`;
+  }
+  const s = String(v);
+  return `<td title="${esc(s)}">${esc(s)}</td>`;
 }
 
-function renderTable(rows) {
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderTable(rows, schema) {
   const tbody = document.getElementById('table-body');
+  const ncols = schema.displayCols.length;
   if (!rows.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="23">Nessuna scheda trovata con i filtri selezionati.</td></tr>';
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="${ncols}">Nessuna scheda trovata con i filtri selezionati.</td></tr>`;
     return;
   }
-  tbody.innerHTML = rows.map(r => `<tr>
-    ${cell(r.data_caricamento)}
-    ${cell(r.asl)}
-    ${cell(r.data_evento)}
-    ${cell(r.luogo_tipo)}
-    ${cell(r.luogo_nome)}
-    ${cell(r.tempo_da_bere)}
-    ${cell(r.genere)}
-    ${cell(r.sesso_assegnato)}
-    ${cell(r.eta)}
-    ${cell(r.patente)}
-    ${cell(r.patente_ritirata)}
-    ${cell(r.trasporto_prima)}
-    ${cell(r.valore_atteso_range)}
-    ${cell(r.valore_rilevato_range)}
-    ${cell(r.trasporto_dopo)}
-    <td>${r.tipo_risposta ? '<span class="badge badge-' + r.tipo_risposta + '">' + r.tipo_risposta + '</span>' : '<span style="color:#ccc">—</span>'}</td>
-    ${cell(r.stima_consumo)}
-    ${cell(r.bevute_birra)}
-    ${cell(r.bevute_vino)}
-    ${cell(r.bevute_shot)}
-    ${cell(r.bevute_aperitivo)}
-    ${cell(r.ha_mangiato)}
-    ${cell(r.sostanze)}
-  </tr>`).join('');
+  tbody.innerHTML = rows.map(r =>
+    '<tr>' + schema.displayCols.map(c => cellVal(r[c.k], c)).join('') + '</tr>'
+  ).join('');
 }
 
-/* ---- Export CSV ---- */
-const ALL_COLS = [
-  ['id','ID'],['creato_il','Creato il'],['data_caricamento','Data caricamento'],
-  ['asl','ASL'],['data_evento','Data evento'],['luogo_tipo','Luogo tipo'],
-  ['luogo_nome','Luogo nome'],['tempo_da_bere','Tempo da bere'],['genere','Genere'],
-  ['sesso_assegnato','Sesso assegnato'],['eta','Età'],['patente','Patente'],
-  ['patente_ritirata','Patente ritirata'],['trasporto_prima','Trasporto prima'],
-  ['trasporto_prima_altro','Trasporto prima (altro)'],['valore_atteso_range','Valore atteso range'],
-  ['valore_atteso_preciso','Valore atteso preciso'],['valore_rilevato_range','Valore rilevato range'],
-  ['valore_rilevato_preciso','Valore rilevato preciso'],['trasporto_dopo','Trasporto dopo'],
-  ['trasporto_dopo_altro','Trasporto dopo (altro)'],['tipo_risposta','Tipo risposta'],
-  ['stima_consumo','Stima consumo'],['bevute_birra','Birra (bicchieri)'],
-  ['bevute_vino','Vino (bicchieri)'],['bevute_shot','Shot'],['bevute_aperitivo','Aperitivi/Cocktail'],
-  ['ha_mangiato','Ha mangiato'],['ha_mangiato_da_quanto','Mangiato da quanto'],
-  ['sostanze','Sostanze'],['sostanze_altro','Sostanze (altro)'],
-];
-
+/* ============================================================
+   EXPORT CSV
+============================================================ */
 function csvEsc(v) {
   if (v === null || v === undefined) return '';
   if (Array.isArray(v)) v = v.join('; ');
@@ -362,11 +503,13 @@ async function exportCSV() {
   const btn = document.getElementById('btn-csv');
   btn.disabled = true; btn.textContent = 'Esportazione…';
 
-  let all = [], from = 0;
+  const schema = SCHEMAS[activeScheda];
   const f = getFilters();
+  let all = [], from = 0;
   while (true) {
-    let q = db.from(TABLE).select('*').order('creato_il', { ascending: false }).range(from, from + 999);
-    q = applyQuery(q, f);
+    const q = buildQuery(f, '*')
+      .order('creato_il', { ascending: false })
+      .range(from, from + 999);
     const { data, error } = await q;
     if (error || !data || !data.length) break;
     all = all.concat(data);
@@ -374,14 +517,15 @@ async function exportCSV() {
     from += 1000;
   }
 
-  const header = ALL_COLS.map(c => c[1]).join(',');
-  const rows = all.map(r => ALL_COLS.map(([k]) => csvEsc(r[k])).join(','));
+  const header = schema.csvCols.map(c => c[1]).join(',');
+  const rows = all.map(r => schema.csvCols.map(([k]) => csvEsc(r[k])).join(','));
   const csv = '﻿' + [header, ...rows].join('\r\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url;
-  a.download = 'etilometro_' + new Date().toISOString().slice(0,10) + '.csv';
+  const today = new Date().toISOString().slice(0,10);
+  a.download = `${activeScheda}_${today}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
