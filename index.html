@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Questionario Etilometro – Rete Safe Night Piemonte</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#f7f7f5;color:#1a1a1a;min-height:100vh;
+    padding:1.25rem 1rem 4rem;font-size:16px;line-height:1.4;
+  }
+  .wrap{max-width:480px;margin:0 auto}
+
+  /* Header */
+  .site-header{margin-bottom:1.75rem}
+  .site-header h1{font-size:19px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px;line-height:1.3}
+  .site-header p{font-size:13.5px;color:#666;line-height:1.55}
+
+  /* Progress */
+  .prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .prog-row span{font-size:12px;color:#888;font-weight:500}
+  .prog-track{height:4px;background:#e3e3e0;border-radius:99px;margin-bottom:1.5rem;overflow:hidden}
+  .prog-fill{height:100%;background:#1a1a1a;border-radius:99px;transition:width .35s ease;width:0%}
+
+  /* Section pill */
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.4px;padding:5px 13px;border-radius:99px;margin-bottom:1rem}
+  .pill-base{background:#dbeafe;color:#1d4ed8}
+  .pill-deep{background:#ede9fe;color:#6d28d9}
+
+  /* Warning box */
+  .warn{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:.9rem 1rem;
+    font-size:12.5px;color:#991b1b;line-height:1.5;margin-bottom:1.1rem}
+  .warn b{color:#7f1d1d}
+
+  /* Question card */
+  .qcard{background:#fff;border:1.5px solid #e5e5e5;border-radius:14px;padding:1.1rem 1.1rem .95rem;
+    margin-bottom:.75rem;transition:border-color .2s}
+  .qcard.err{border-color:#ef4444}
+  .qcard.hidden{display:none}
+  .qlabel{font-size:15.5px;font-weight:600;line-height:1.4;margin-bottom:3px}
+  .req{color:#ef4444;margin-left:2px}
+  .qhint{font-size:12.5px;color:#888;margin-bottom:11px}
+  .errmsg{font-size:12.5px;color:#ef4444;margin-top:9px;display:none;font-weight:500}
+  .qcard.err .errmsg{display:block}
+
+  /* Options (radio/checkbox cards) */
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:12px;padding:13px 14px;border:1.5px solid #e5e5e5;
+    border-radius:11px;cursor:pointer;transition:background .15s,border-color .15s;user-select:none;
+    min-height:48px}
+  .opt:active{background:#eee}
+  .opt.sel{background:#eef2ff;border-color:#1a1a1a}
+  .opt input{accent-color:#1a1a1a;width:20px;height:20px;flex-shrink:0;cursor:pointer}
+  .opt span{font-size:15px;font-weight:500}
+
+  /* Compact grid for option sets with many short labels */
+  .opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  /* Select (ASL) */
+  select.big-select{
+    width:100%;padding:14px;font-size:16px;font-family:inherit;border:1.5px solid #e5e5e5;
+    border-radius:11px;background:#fafafa url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="9"><path d="M1 1l6 6 6-6" stroke="%23555" stroke-width="2" fill="none"/></svg>') no-repeat right 16px center;
+    appearance:none;-webkit-appearance:none;min-height:50px
+  }
+  select.big-select:focus{border-color:#1a1a1a;outline:none}
+
+  /* Text / date inputs */
+  input[type=text],input[type=date]{
+    width:100%;padding:13px 14px;font-size:16px;font-family:inherit;border:1.5px solid #e5e5e5;
+    border-radius:11px;background:#fafafa;outline:none;transition:border-color .2s;min-height:48px
+  }
+  input[type=text]:focus,input[type=date]:focus{border-color:#1a1a1a;background:#fff}
+
+  /* Stepper (drink quantities) */
+  .drink-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #eee}
+  .drink-row:last-child{border-bottom:none}
+  .drink-name{font-size:14.5px;font-weight:600}
+  .drink-sub{font-size:12px;color:#888;font-weight:400}
+  .stepper{display:flex;align-items:center;gap:12px}
+  .stepper button{width:40px;height:40px;border-radius:10px;border:1.5px solid #ccc;background:#fff;
+    font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:#1a1a1a;line-height:1}
+  .stepper button:active{background:#eee}
+  .stepper .count{min-width:28px;text-align:center;font-size:16px;font-weight:700}
+
+  /* Divider */
+  .divider{border:none;border-top:1px solid #e0e0e0;margin:1.6rem 0}
+
+  /* Fork */
+  .fork{background:#f0f0ee;border:1.5px solid #e5e5e5;border-radius:14px;padding:1.15rem;margin-top:1.5rem}
+  .fork-head{font-size:14.5px;font-weight:700;margin-bottom:4px}
+  .fork-sub{font-size:12.5px;color:#666;margin-bottom:13px;line-height:1.5}
+  .fork-btns{display:flex;flex-direction:column;gap:9px}
+
+  .btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    padding:14px;font-size:15px;font-weight:600;font-family:inherit;background:#1a1a1a;color:#fff;
+    border:none;border-radius:12px;cursor:pointer;transition:opacity .15s;min-height:50px}
+  .btn-primary:active{opacity:.78}
+  .btn-primary:disabled{opacity:.5}
+
+  .btn-secondary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    padding:14px;font-size:15px;font-weight:600;font-family:inherit;background:#fff;color:#1a1a1a;
+    border:1.5px solid #ccc;border-radius:12px;cursor:pointer;min-height:50px}
+  .btn-secondary:active{background:#f0f0ee}
+
+  .btn-final{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;
+    font-size:15.5px;font-weight:700;font-family:inherit;background:#1a1a1a;color:#fff;border:none;
+    border-radius:13px;cursor:pointer;margin-top:1.3rem;min-height:52px}
+  .btn-final:active{opacity:.78}
+  .btn-final:disabled{opacity:.5}
+
+  /* Success */
+  #ok{display:none}
+  .ok-wrap{text-align:center;padding:3.5rem 1rem}
+  .ok-icon{font-size:46px;margin-bottom:1rem}
+  .ok-title{font-size:20px;font-weight:700;margin-bottom:7px}
+  .ok-sub{font-size:14px;color:#666;line-height:1.6;margin-bottom:1.4rem}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+  .chip{font-size:12px;padding:5px 13px;border-radius:99px;background:#f0f0ee;color:#555;font-weight:500}
+  .chip.hi{background:#d1fae5;color:#065f46}
+  .btn-newentry{margin-top:1.5rem}
+
+  /* Toast */
+  #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#ef4444;color:#fff;padding:11px 20px;border-radius:10px;font-size:13.5px;font-weight:500;
+    opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;max-width:90vw;text-align:center;z-index:99}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #part2,#submit-wrap{display:none}
+
+  /* Scroll snap niceties on mobile */
+  .qcard{scroll-margin-top:18px}
+</style>
+</head>
+<body>
+
+<div class="wrap" id="form">
+
+  <header class="site-header">
+    <h1>Questionario Etilometro<br>Rete Safe Night Piemonte</h1>
+    <p>Tutti i campi della sezione attiva sono obbligatori, salvo dove indicato. Al termine della parte base puoi inviare oppure proseguire con l'approfondimento.</p>
+  </header>
+
+  <div class="prog-row">
+    <span id="step-lbl">Sezione base</span>
+    <span id="pct-lbl">0%</span>
+  </div>
+  <div class="prog-track"><div class="prog-fill" id="prog"></div></div>
+
+  <span class="pill pill-base">● Parte base</span>
+
+  <div class="warn"><b>ATTENZIONE:</b> la data qui sotto è quella di caricamento della scheda da parte degli operatori, NON la data dell'evento.</div>
+
+  <div class="qcard" id="c-data_caricamento">
+    <p class="qlabel">Data di caricamento scheda<span class="req">*</span></p>
+    <input type="date" id="data_caricamento">
+    <p class="errmsg">Inserisci la data per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-asl">
+    <p class="qlabel">ASL<span class="req">*</span></p>
+    <select class="big-select" id="asl-select">
+      <option value="">Seleziona…</option>
+      <option value="ASL AL">ASL AL</option>
+      <option value="ASL AT">ASL AT</option>
+      <option value="ASL BI">ASL BI</option>
+      <option value="ASL CN1">ASL CN1</option>
+      <option value="ASL CN2">ASL CN2</option>
+      <option value="ASL NO">ASL NO</option>
+      <option value="ASL Città di Torino">ASL Città di Torino</option>
+      <option value="ASL TO3">ASL TO3</option>
+      <option value="ASL TO4">ASL TO4</option>
+      <option value="ASL TO5">ASL TO5</option>
+      <option value="ASL VC">ASL VC</option>
+      <option value="ASL VCO">ASL VCO</option>
+      <option value="NEUTRAVEL">NEUTRAVEL</option>
+    </select>
+    <p class="errmsg">Seleziona l'ASL per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-data_evento">
+    <p class="qlabel">Data evento<span class="req">*</span></p>
+    <input type="date" id="data_evento">
+    <p class="errmsg">Inserisci la data dell'evento per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-luogo_tipo">
+    <p class="qlabel">Luogo<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="luogo_tipo" value="citta_metropolitana"><span>Città metropolitana</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="capoluogo"><span>Capoluogo di Provincia</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="citta_20mila"><span>Città (oltre 20mila abitanti)</span></label>
+      <label class="opt"><input type="radio" name="luogo_tipo" value="paese"><span>Paese</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-luogo_nome">
+    <p class="qlabel">Specificare nome del luogo<span class="req">*</span></p>
+    <p class="qhint">Scrivere in MAIUSCOLO</p>
+    <input type="text" id="luogo_nome" placeholder="ES. TORINO" oninput="this.value=this.value.toUpperCase();sync()" style="text-transform:uppercase">
+    <p class="errmsg">Inserisci il nome del luogo per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-tempo_da_bere">
+    <p class="qlabel">Da quanto tempo hai finito di bere?<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="tempo_da_bere" value="meno30"><span>Meno 30 minuti</span></label>
+      <label class="opt"><input type="radio" name="tempo_da_bere" value="30-60"><span>30-60 minuti</span></label>
+      <label class="opt"><input type="radio" name="tempo_da_bere" value="1ora"><span>1 ora</span></label>
+      <label class="opt"><input type="radio" name="tempo_da_bere" value="2ore"><span>2 ore</span></label>
+      <label class="opt"><input type="radio" name="tempo_da_bere" value="3+ore"><span>3+ ore</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-genere">
+    <p class="qlabel">Genere in cui ti identifichi<span class="req">*</span></p>
+    <p class="qhint">Pronomi utilizzati</p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="genere" value="maschio"><span>Maschio</span></label>
+      <label class="opt"><input type="radio" name="genere" value="femmina"><span>Femmina</span></label>
+      <label class="opt"><input type="radio" name="genere" value="altro"><span>Altro</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-sesso">
+    <p class="qlabel">Sesso assegnato<span class="req">*</span></p>
+    <div class="opts opts-grid">
+      <label class="opt"><input type="radio" name="sesso" value="M"><span>M</span></label>
+      <label class="opt"><input type="radio" name="sesso" value="F"><span>F</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-eta">
+    <p class="qlabel">Età<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="eta" value="<16"><span>Meno di 16 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value="16-17"><span>16 - 17 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value="18-20"><span>18 - 20 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value="21-25"><span>21 - 25 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value="26-30"><span>26 - 30 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value="31-35"><span>31 - 35 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value="36-40"><span>36 - 40 anni</span></label>
+      <label class="opt"><input type="radio" name="eta" value=">40"><span>Più di 40 anni</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-patente">
+    <p class="qlabel">Hai la patente?<span class="req">*</span></p>
+    <div class="opts opts-grid">
+      <label class="opt"><input type="radio" name="patente" value="si"><span>SI</span></label>
+      <label class="opt"><input type="radio" name="patente" value="no"><span>NO</span></label>
+      <label class="opt" style="grid-column:1/-1"><input type="radio" name="patente" value="neopat"><span>SI, neopatentato/a</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-patente_ritirata">
+    <p class="qlabel">Ti hanno mai ritirato la patente?<span class="req">*</span></p>
+    <div class="opts opts-grid">
+      <label class="opt"><input type="radio" name="patente_ritirata" value="si"><span>SI</span></label>
+      <label class="opt"><input type="radio" name="patente_ritirata" value="no"><span>NO</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-trasporto_prima">
+    <p class="qlabel">Come pensi di tornare a casa questa sera?<span class="req">*</span></p>
+    <p class="qhint">Prima dell'etilometro</p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="trasporto_prima" value="guido_io"><span>Guido io</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="bob"><span>BOB</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="bici"><span>Bici</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="mezzi_pubblici"><span>Mezzi pubblici</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="taxi"><span>Taxi</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="a_piedi"><span>A piedi</span></label>
+      <label class="opt"><input type="radio" name="trasporto_prima" value="altro"><span>Altro</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard hidden" id="c-trasporto_prima_altro">
+    <p class="qlabel">Specificare Altro<span class="req">*</span></p>
+    <input type="text" id="trasporto_prima_altro" placeholder="Specifica…" oninput="sync()">
+    <p class="errmsg">Specifica per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-valore_atteso_range">
+    <p class="qlabel">Che valore ti aspetti dall'etilometro?<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="valore_atteso_range" value="0-0.20"><span>0 – 0,20</span></label>
+      <label class="opt"><input type="radio" name="valore_atteso_range" value="0.21-0.50"><span>0,21 – 0,50</span></label>
+      <label class="opt"><input type="radio" name="valore_atteso_range" value="0.51-0.80"><span>0,51 – 0,80</span></label>
+      <label class="opt"><input type="radio" name="valore_atteso_range" value="0.81-1.50"><span>0,81 – 1,50</span></label>
+      <label class="opt"><input type="radio" name="valore_atteso_range" value=">1.50"><span>&gt; 1,50</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-valore_atteso_preciso">
+    <p class="qlabel">Valore preciso atteso <span style="font-weight:400;color:#888">(facoltativo)</span></p>
+    <p class="qhint">Formato es. 0,23</p>
+    <input type="text" id="valore_atteso_preciso" placeholder="0,00" inputmode="decimal">
+  </div>
+
+  <div class="qcard" id="c-valore_rilevato_range">
+    <p class="qlabel">Valore rilevato all'etilometro<span class="req">*</span></p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="valore_rilevato_range" value="0-0.20"><span>0 – 0,20</span></label>
+      <label class="opt"><input type="radio" name="valore_rilevato_range" value="0.21-0.50"><span>0,21 – 0,50</span></label>
+      <label class="opt"><input type="radio" name="valore_rilevato_range" value="0.51-0.80"><span>0,51 – 0,80</span></label>
+      <label class="opt"><input type="radio" name="valore_rilevato_range" value="0.81-1.50"><span>0,81 – 1,50</span></label>
+      <label class="opt"><input type="radio" name="valore_rilevato_range" value=">1.50"><span>&gt; 1,50</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard" id="c-valore_rilevato_preciso">
+    <p class="qlabel">Valore preciso rilevato <span style="font-weight:400;color:#888">(facoltativo)</span></p>
+    <p class="qhint">Formato es. 0,23</p>
+    <input type="text" id="valore_rilevato_preciso" placeholder="0,00" inputmode="decimal">
+  </div>
+
+  <div class="qcard" id="c-trasporto_dopo">
+    <p class="qlabel">Come pensi di tornare a casa questa sera?<span class="req">*</span></p>
+    <p class="qhint">Dopo l'etilometro</p>
+    <div class="opts">
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="guido_io"><span>Guido io</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="bob"><span>BOB</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="bici"><span>Bici</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="mezzi_pubblici"><span>Mezzi pubblici</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="taxi"><span>Taxi</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="a_piedi"><span>A piedi</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="aspetto"><span>Aspetto</span></label>
+      <label class="opt"><input type="radio" name="trasporto_dopo" value="altro"><span>Altro</span></label>
+    </div>
+    <p class="errmsg">Seleziona un'opzione per continuare</p>
+  </div>
+
+  <div class="qcard hidden" id="c-trasporto_dopo_altro">
+    <p class="qlabel">Specificare Altro<span class="req">*</span></p>
+    <input type="text" id="trasporto_dopo_altro" placeholder="Specifica…" oninput="sync()">
+    <p class="errmsg">Specifica per continuare</p>
+  </div>
+
+  <!-- FORK -->
+  <div class="fork">
+    <p class="fork-head">✎ Parte base completata</p>
+    <p class="fork-sub">Puoi inviare ora, oppure proseguire con alcune domande di approfondimento.</p>
+    <div class="fork-btns">
+      <button class="btn-primary" id="btn-send" onclick="doSend()">➤ Invia ora</button>
+      <button class="btn-secondary" onclick="doMore()">⌄ Continua con l'approfondimento</button>
+    </div>
+  </div>
+
+  <!-- PART 2 -->
+  <div id="part2">
+    <hr class="divider">
+    <span class="pill pill-deep">● Approfondimento</span>
+
+    <div class="qcard" id="c-stima_consumo">
+      <p class="qlabel">Stima del proprio consumo<span class="req">*</span></p>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="stima_consumo" value="1"><span>1 — Poco</span></label>
+        <label class="opt"><input type="radio" name="stima_consumo" value="2"><span>2 — Medio-Basso</span></label>
+        <label class="opt"><input type="radio" name="stima_consumo" value="3"><span>3 — Nella Norma</span></label>
+        <label class="opt"><input type="radio" name="stima_consumo" value="4"><span>4 — Medio-Alto</span></label>
+        <label class="opt"><input type="radio" name="stima_consumo" value="5"><span>5 — Molto</span></label>
+      </div>
+      <p class="errmsg">Seleziona un'opzione per continuare</p>
+    </div>
+
+    <div class="qcard" id="c-bevute">
+      <p class="qlabel">Cosa hai bevuto questa sera?</p>
+      <p class="qhint">Indica la quantità per ciascun tipo (0 se non bevuto)</p>
+      <div class="drink-row">
+        <span class="drink-name">Birra <span class="drink-sub">(330ml)</span></span>
+        <div class="stepper" data-drink="birra">
+          <button type="button" onclick="stepDrink('birra',-1)">−</button>
+          <span class="count" id="count-birra">0</span>
+          <button type="button" onclick="stepDrink('birra',1)">+</button>
+        </div>
+      </div>
+      <div class="drink-row">
+        <span class="drink-name">Vino <span class="drink-sub">(125ml)</span></span>
+        <div class="stepper" data-drink="vino">
+          <button type="button" onclick="stepDrink('vino',-1)">−</button>
+          <span class="count" id="count-vino">0</span>
+          <button type="button" onclick="stepDrink('vino',1)">+</button>
+        </div>
+      </div>
+      <div class="drink-row">
+        <span class="drink-name">Shot <span class="drink-sub">(amari x2)</span></span>
+        <div class="stepper" data-drink="shot">
+          <button type="button" onclick="stepDrink('shot',-1)">−</button>
+          <span class="count" id="count-shot">0</span>
+          <button type="button" onclick="stepDrink('shot',1)">+</button>
+        </div>
+      </div>
+      <div class="drink-row">
+        <span class="drink-name">Aperitivi/Cocktails</span>
+        <div class="stepper" data-drink="aperitivo">
+          <button type="button" onclick="stepDrink('aperitivo',-1)">−</button>
+          <span class="count" id="count-aperitivo">0</span>
+          <button type="button" onclick="stepDrink('aperitivo',1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="qcard" id="c-ha_mangiato">
+      <p class="qlabel">Hai mangiato?<span class="req">*</span></p>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="ha_mangiato" value="no"><span>No</span></label>
+        <label class="opt"><input type="radio" name="ha_mangiato" value="spuntino"><span>Spuntino</span></label>
+        <label class="opt"><input type="radio" name="ha_mangiato" value="pasto"><span>Pasto</span></label>
+      </div>
+      <p class="errmsg">Seleziona un'opzione per continuare</p>
+    </div>
+
+    <div class="qcard hidden" id="c-ha_mangiato_da_quanto">
+      <p class="qlabel">Da quanto?<span class="req">*</span></p>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="ha_mangiato_da_quanto" value="meno1ora"><span>Meno di un'ora</span></label>
+        <label class="opt"><input type="radio" name="ha_mangiato_da_quanto" value="1-3ore"><span>1-3 ore</span></label>
+        <label class="opt"><input type="radio" name="ha_mangiato_da_quanto" value="3+ore"><span>3+ ore</span></label>
+      </div>
+      <p class="errmsg">Seleziona un'opzione per continuare</p>
+    </div>
+
+    <div class="qcard" id="c-sostanze">
+      <p class="qlabel">Hai assunto altre sostanze stasera?<span class="req">*</span></p>
+      <p class="qhint">Puoi selezionare più opzioni</p>
+      <div class="opts">
+        <label class="opt"><input type="checkbox" name="sostanze" value="no"><span>No</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="cannabis"><span>Cannabis</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="cocaina"><span>Cocaina</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="mdma"><span>MDMA</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="ketamine"><span>Ketamine</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="psichedelici"><span>Psichedelici</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="altre_terapie"><span>Altre terapie</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="non_risponde"><span>Non risponde</span></label>
+        <label class="opt"><input type="checkbox" name="sostanze" value="altro"><span>Altro</span></label>
+      </div>
+      <p class="errmsg">Seleziona almeno un'opzione per continuare</p>
+    </div>
+
+    <div class="qcard hidden" id="c-sostanze_altro">
+      <p class="qlabel">Specificare Altro<span class="req">*</span></p>
+      <input type="text" id="sostanze_altro" placeholder="Specifica…" oninput="sync()">
+      <p class="errmsg">Specifica per continuare</p>
+    </div>
+
+    <div id="submit-wrap">
+      <button class="btn-final" id="btn-final" onclick="doFull()">➤ Invia questionario completo</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Success -->
+<div id="ok">
+  <div class="ok-wrap">
+    <div class="ok-icon">✓</div>
+    <p class="ok-title" id="ok-title">Scheda inviata!</p>
+    <p class="ok-sub" id="ok-sub">I dati sono stati salvati correttamente.</p>
+    <div class="chips" id="ok-chips"></div>
+    <button class="btn-primary btn-newentry" onclick="location.reload()">+ Nuova scheda</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE SUPABASE — sostituire con i valori reali
+   Settings → API nel progetto Supabase (regione Germania)
+============================================================ */
+const SUPABASE_URL = 'https://zotrurzfsaerabpqgjiq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpvdHJ1cnpmc2FlcmFicHFnamlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2ODAzOTcsImV4cCI6MjA4OTI1NjM5N30.V1cfWx_L5YoKnCduz-B-ecb_jzCmqh3X4NLr6YVt7h4';
+const TABLE_NAME = 'etilometro_risposte';
+/* ============================================================ */
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let deep = false;
+const drinkCounts = { birra: 0, vino: 0, shot: 0, aperitivo: 0 };
+
+/* ---- Today default ---- */
+document.getElementById('data_caricamento').value = new Date().toISOString().slice(0,10);
+
+/* ---- Option card styling sync ---- */
+document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(i => {
+  i.addEventListener('change', () => {
+    if (i.type === 'radio') {
+      document.querySelectorAll(`[name="${i.name}"]`).forEach(r => r.closest('.opt').classList.remove('sel'));
+    }
+    i.closest('.opt').classList.toggle('sel', i.checked);
+    handleConditionals(i.name);
+    sync();
+  });
+});
+
+/* ---- Mutual exclusivity for sostanze: No / Non risponde vs specific substances ---- */
+document.querySelectorAll('input[name=sostanze]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const exclusive = ['no', 'non_risponde'];
+    if (exclusive.includes(cb.value) && cb.checked) {
+      document.querySelectorAll('input[name=sostanze]').forEach(o => {
+        if (o.value !== cb.value) { o.checked = false; o.closest('.opt').classList.remove('sel'); }
+      });
+    } else if (!exclusive.includes(cb.value) && cb.checked) {
+      document.querySelectorAll('input[name=sostanze]').forEach(o => {
+        if (exclusive.includes(o.value)) { o.checked = false; o.closest('.opt').classList.remove('sel'); }
+      });
+    }
+  });
+});
+
+/* ---- Conditional reveal logic ---- */
+function handleConditionals(name) {
+  if (name === 'trasporto_prima') {
+    toggle('c-trasporto_prima_altro', gRad('trasporto_prima') === 'altro');
+  }
+  if (name === 'trasporto_dopo') {
+    toggle('c-trasporto_dopo_altro', gRad('trasporto_dopo') === 'altro');
+  }
+  if (name === 'ha_mangiato') {
+    toggle('c-ha_mangiato_da_quanto', gRad('ha_mangiato') !== 'no' && gRad('ha_mangiato') !== '');
+  }
+  if (name === 'sostanze') {
+    toggle('c-sostanze_altro', gChk('sostanze').includes('altro'));
+  }
+}
+function toggle(cardId, show) {
+  const c = document.getElementById(cardId);
+  c.classList.toggle('hidden', !show);
+  if (!show) c.classList.remove('err');
+}
+
+/* ---- Drink steppers ---- */
+function stepDrink(type, delta) {
+  drinkCounts[type] = Math.max(0, Math.min(9, drinkCounts[type] + delta));
+  document.getElementById('count-' + type).textContent = drinkCounts[type] === 9 ? '9+' : drinkCounts[type];
+}
+
+/* ---- Helpers ---- */
+function gRad(n) { const r = document.querySelector(`input[name="${n}"]:checked`); return r ? r.value : ''; }
+function gChk(n) { return [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(c => c.value); }
+function gVal(id) { const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+
+/* ---- Field validators (also used for progress) ---- */
+const validators = {
+  data_caricamento: () => !!gVal('data_caricamento'),
+  asl: () => !!gVal('asl-select'),
+  data_evento: () => !!gVal('data_evento'),
+  luogo_tipo: () => !!gRad('luogo_tipo'),
+  luogo_nome: () => gVal('luogo_nome').length > 0,
+  tempo_da_bere: () => !!gRad('tempo_da_bere'),
+  genere: () => !!gRad('genere'),
+  sesso: () => !!gRad('sesso'),
+  eta: () => !!gRad('eta'),
+  patente: () => !!gRad('patente'),
+  patente_ritirata: () => !!gRad('patente_ritirata'),
+  trasporto_prima: () => !!gRad('trasporto_prima'),
+  trasporto_prima_altro: () => gRad('trasporto_prima') !== 'altro' || gVal('trasporto_prima_altro').length > 0,
+  valore_atteso_range: () => !!gRad('valore_atteso_range'),
+  valore_rilevato_range: () => !!gRad('valore_rilevato_range'),
+  trasporto_dopo: () => !!gRad('trasporto_dopo'),
+  trasporto_dopo_altro: () => gRad('trasporto_dopo') !== 'altro' || gVal('trasporto_dopo_altro').length > 0,
+  stima_consumo: () => !!gRad('stima_consumo'),
+  ha_mangiato: () => !!gRad('ha_mangiato'),
+  ha_mangiato_da_quanto: () => gRad('ha_mangiato') === 'no' || !!gRad('ha_mangiato_da_quanto'),
+  sostanze: () => gChk('sostanze').length > 0,
+  sostanze_altro: () => !gChk('sostanze').includes('altro') || gVal('sostanze_altro').length > 0,
+};
+
+const BASE_IDS = ['data_caricamento','asl','data_evento','luogo_tipo','luogo_nome','tempo_da_bere',
+  'genere','sesso','eta','patente','patente_ritirata','trasporto_prima','trasporto_prima_altro',
+  'valore_atteso_range','valore_rilevato_range','trasporto_dopo','trasporto_dopo_altro'];
+
+const DEEP_IDS = ['stima_consumo','ha_mangiato','ha_mangiato_da_quanto','sostanze','sostanze_altro'];
+
+/* ---- Progress ---- */
+function sync() {
+  const activeIds = deep ? [...BASE_IDS, ...DEEP_IDS] : BASE_IDS;
+  let filled = 0;
+  activeIds.forEach(id => {
+    const card = document.getElementById('c-' + id);
+    if (card && card.classList.contains('hidden')) return; // skip hidden conditionals from denominator adjustment below
+    if (validators[id]()) filled++;
+  });
+  const visibleCount = activeIds.filter(id => {
+    const card = document.getElementById('c-' + id);
+    return !(card && card.classList.contains('hidden'));
+  }).length;
+  const pct = visibleCount ? Math.round(filled / visibleCount * 100) : 0;
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('pct-lbl').textContent = pct + '%';
+  document.getElementById('step-lbl').textContent = deep ? 'Base + Approfondimento' : 'Sezione base';
+}
+
+/* ---- Validation ---- */
+function validateGroup(ids) {
+  let ok = true, firstBad = null;
+  ids.forEach(id => {
+    const card = document.getElementById('c-' + id);
+    if (!card || card.classList.contains('hidden')) return;
+    const v = validators[id]();
+    card.classList.toggle('err', !v);
+    if (!v && ok) { ok = false; firstBad = id; }
+    if (!v) ok = false;
+  });
+  if (!ok && firstBad) {
+    document.getElementById('c-' + firstBad).scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  return ok;
+}
+
+/* ---- Payload ---- */
+function buildPayload(tipo) {
+  return {
+    data_caricamento: gVal('data_caricamento'),
+    asl: gVal('asl-select'),
+    data_evento: gVal('data_evento'),
+    luogo_tipo: gRad('luogo_tipo'),
+    luogo_nome: gVal('luogo_nome'),
+    tempo_da_bere: gRad('tempo_da_bere'),
+    genere: gRad('genere'),
+    sesso_assegnato: gRad('sesso'),
+    eta: gRad('eta'),
+    patente: gRad('patente'),
+    patente_ritirata: gRad('patente_ritirata'),
+    trasporto_prima: gRad('trasporto_prima'),
+    trasporto_prima_altro: gVal('trasporto_prima_altro') || null,
+    valore_atteso_range: gRad('valore_atteso_range'),
+    valore_atteso_preciso: gVal('valore_atteso_preciso') || null,
+    valore_rilevato_range: gRad('valore_rilevato_range'),
+    valore_rilevato_preciso: gVal('valore_rilevato_preciso') || null,
+    trasporto_dopo: gRad('trasporto_dopo'),
+    trasporto_dopo_altro: gVal('trasporto_dopo_altro') || null,
+    tipo_risposta: tipo,
+    stima_consumo: tipo === 'completa' ? Number(gRad('stima_consumo')) || null : null,
+    bevute_birra: tipo === 'completa' ? drinkCounts.birra : null,
+    bevute_vino: tipo === 'completa' ? drinkCounts.vino : null,
+    bevute_shot: tipo === 'completa' ? drinkCounts.shot : null,
+    bevute_aperitivo: tipo === 'completa' ? drinkCounts.aperitivo : null,
+    ha_mangiato: tipo === 'completa' ? gRad('ha_mangiato') : null,
+    ha_mangiato_da_quanto: tipo === 'completa' ? (gRad('ha_mangiato_da_quanto') || null) : null,
+    sostanze: tipo === 'completa' ? gChk('sostanze') : null,
+    sostanze_altro: tipo === 'completa' ? (gVal('sostanze_altro') || null) : null,
+  };
+}
+
+async function salva(tipo) {
+  const payload = buildPayload(tipo);
+  const { error } = await db.from(TABLE_NAME).insert([payload]);
+  if (error) {
+    console.error(error);
+    showToast('Errore nel salvataggio. Controlla la connessione e riprova.');
+    return false;
+  }
+  return true;
+}
+
+/* ---- Actions ---- */
+async function doSend() {
+  if (!validateGroup(BASE_IDS)) return;
+  const btn = document.getElementById('btn-send');
+  btn.disabled = true; btn.textContent = 'Invio in corso…';
+  const ok = await salva('base');
+  if (ok) showOk(false); else { btn.disabled = false; btn.textContent = '➤ Invia ora'; }
+}
+
+function doMore() {
+  if (!validateGroup(BASE_IDS)) return;
+  deep = true;
+  document.getElementById('part2').style.display = 'block';
+  document.getElementById('submit-wrap').style.display = 'block';
+  sync();
+  document.getElementById('part2').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function doFull() {
+  if (!validateGroup(BASE_IDS) || !validateGroup(DEEP_IDS)) return;
+  const btn = document.getElementById('btn-final');
+  btn.disabled = true; btn.textContent = 'Invio in corso…';
+  const ok = await salva('completa');
+  if (ok) showOk(true); else { btn.disabled = false; btn.textContent = '➤ Invia questionario completo'; }
+}
+
+function showOk(full) {
+  document.getElementById('form').style.display = 'none';
+  document.getElementById('ok').style.display = 'block';
+  document.getElementById('ok-title').textContent = full ? 'Scheda completa inviata!' : 'Scheda base inviata!';
+  document.getElementById('ok-sub').textContent = full
+    ? 'Hai completato anche la sezione di approfondimento.'
+    : 'La parte base è stata salvata correttamente.';
+  const chips = [
+    full ? 'Approfondimento incluso' : 'Solo sezione base',
+    `ASL: ${gVal('asl-select') || '—'}`,
+  ];
+  document.getElementById('ok-chips').innerHTML = chips.map((c,i)=>`<span class="chip${i===0&&full?' hi':''}">${c}</span>`).join('');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4200);
+}
+
+document.getElementById('asl-select').addEventListener('change', sync);
+document.getElementById('data_evento').addEventListener('change', sync);
+
+sync();
+</script>
+</body>
+</html>
