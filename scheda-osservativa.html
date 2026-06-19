@@ -489,6 +489,7 @@ function sanitizeOra(el, cardId) {
   card.classList.toggle('err', v.length > 0 && !ORA_RE.test(v));
 }
 function blurOra(el, cardId) {
+  if (/^\d,\d{2}$/.test(el.value)) el.value = '0' + el.value;
   const card = document.getElementById(cardId);
   card.classList.toggle('err', !ORA_RE.test(el.value));
 }
