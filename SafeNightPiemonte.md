@@ -166,7 +166,7 @@ where email = 'aslxx@safenightpiemonte.it';
 | `aslvc@safenightpiemonte.it` | ASL VC |
 | `aslvco@safenightpiemonte.it` | ASL VCO |
 | `neutravel@safenightpiemonte.it` | NEUTRAVEL |
-| `emanuel@progettosteadycam.it` | **Admin** (accesso completo) |
+| `emanuel@progettosteadycam.it` | **Admin** (accesso completo) — password: `SafeNight2026!#` |
 
 ---
 
@@ -223,6 +223,13 @@ Funzionalità:
 - **URL:** https://github.com/EmanuelSteadycam/SafeNightPiemonte
 - **Branch principale:** `main`
 - **CI/CD:** ogni push su `main` → deploy automatico Vercel in ~15 secondi
+- **Struttura file:**
+  - `etilometro/index.html` — form etilometro
+  - `uscite/index.html` — form scheda uscite
+  - `osservativa/index.html` — form scheda osservativa
+  - `admin/index.html` — pannello admin
+  - `bg-etilometro.png` / `bg-uscite.png` / `bg-osservativa.png` — sfondi doodle
+  - `SafeNightPiemonte.md` — questa documentazione
 
 ---
 
@@ -230,10 +237,10 @@ Funzionalità:
 
 | Pagina | URL |
 |--------|-----|
-| Etilometro | https://safenightpiemonte.vercel.app/index.html |
-| Scheda Uscite | https://safenightpiemonte.vercel.app/scheda-uscite.html |
-| Scheda Osservativa | https://safenightpiemonte.vercel.app/scheda-osservativa.html |
-| Admin | https://safenightpiemonte.vercel.app/admin.html |
+| Etilometro | https://safenightpiemonte.vercel.app/etilometro/ |
+| Scheda Uscite | https://safenightpiemonte.vercel.app/uscite/ |
+| Scheda Osservativa | https://safenightpiemonte.vercel.app/osservativa/ |
+| Admin | https://safenightpiemonte.vercel.app/admin/ |
 
 - **Progetto Vercel:** `safenightpiemonte` (team `centro-steadycams-projects`)
 - **Tipo:** sito statico, nessun build step
@@ -269,7 +276,7 @@ Operatori (campo)             Utenti ASL              Admin
 
 | Operazione | Come farlo |
 |-----------|------------|
-| Vedere le schede | https://safenightpiemonte.vercel.app/admin.html |
+| Vedere le schede | https://safenightpiemonte.vercel.app/admin/ |
 | Esportare CSV | Admin → seleziona tab → "Esporta CSV" |
 | Aggiungere utente ASL | Vedi procedura in sezione Ruoli utenti |
 | Aggiungere utente admin | Supabase → Auth → Users → Add user, poi SQL: `set raw_app_meta_data = raw_app_meta_data \|\| '{"role":"admin"}'::jsonb` |
