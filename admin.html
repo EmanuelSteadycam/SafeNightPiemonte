@@ -505,7 +505,7 @@ function renderTable(rows, schema) {
   }
   tbody.innerHTML = rows.map(r =>
     '<tr>' + schema.displayCols.map(c => cellVal(r[c.k], c)).join('') +
-    `<td><button class="btn-del" onclick="deleteRow('${r.id}')">Elimina</button></td>` +
+    (userRole === 'asl' ? '<td></td>' : `<td><button class="btn-del" onclick="deleteRow('${r.id}')">Elimina</button></td>`) +
     '</tr>'
   ).join('');
 }
